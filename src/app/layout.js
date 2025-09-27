@@ -2,7 +2,7 @@ import './globals.css';
 
 export const metadata = {
   title: 'Vrober - Web Solutions',
-  description: 'Building innovative web solutions for the modern world',
+  description: 'providing srevices at your doorstep',
 };
 
 export default function RootLayout({ children }) {

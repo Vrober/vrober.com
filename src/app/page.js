@@ -1,5 +1,5 @@
-import Mobileheader from './components/Mobileheader';
-import MobileNav from './components/MobileNav';
+import Mobileheader from './_components/Mobileheader';
+import MobileNav from './_components/MobileNav';
 import Home from './Home/page';
 
 export default function page() {
