@@ -1,6 +1,7 @@
 import CleaningServices from '../_components/CleaningServices';
 import DesktopMessage from '../_components/DesktopMessage';
 import MHomeCategory from '../_components/MHomeCategory';
+import Mobileheader from '../_components/Mobileheader';
 import MostBookedServices from '../_components/MostBookedServices';
 import OtherServices from '../_components/OtherServices';
 import PopularServices from '../_components/PopularServices';
@@ -16,6 +17,7 @@ export default function Home() {
 
       {/* Mobile Content - Only shown on mobile */}
       <div className="mb-20 md:hidden">
+        <Mobileheader />
         <SearchBar />
         <MHomeCategory />
         <PopularServices />
@@ -24,7 +26,7 @@ export default function Home() {
         <SalonforWomen />
         <PremiumServices />
         <OtherServices />
-      </div>
+          </div>
     </>
   );
 }

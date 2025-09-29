@@ -1,4 +1,3 @@
-import Mobileheader from './_components/Mobileheader';
 import MobileNav from './_components/MobileNav';
 import './globals.css';
 
@@ -11,7 +10,6 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="antialiased">
-        <Mobileheader />
         <MobileNav />
         <main>{children}</main>
       </body>
