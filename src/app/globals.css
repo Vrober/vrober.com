@@ -1,22 +1,69 @@
 @import 'tailwindcss';
 
-.mobile-nav-icon {
-  @apply flex cursor-pointer flex-col items-center justify-center text-zinc-600 md:hidden;
-}
-.Seaction-heading {
-  @apply mb-2 text-2xl font-bold;
+/* Premium Black & White Theme - Root Variables */
+:root {
+  --color-primary: #000000;
+  --color-secondary: #ffffff;
+  --color-accent: #1a1a1a;
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f5f5f5;
+  --color-gray-200: #e5e5e5;
+  --color-gray-300: #d4d4d4;
+  --color-gray-400: #a3a3a3;
+  --color-gray-500: #737373;
+  --color-gray-600: #525252;
+  --color-gray-700: #404040;
+  --color-gray-800: #262626;
+  --color-gray-900: #171717;
 }
 
+/* Base Styles */
+* {
+  @apply antialiased;
+}
+
+body {
+  @apply bg-white text-gray-900 transition-colors duration-300;
+}
+
+/* Premium Typography */
+h1, h2, h3, h4, h5, h6 {
+  @apply font-bold tracking-tight;
+}
+
+h1 {
+  @apply text-4xl md:text-5xl lg:text-6xl;
+}
+
+h2 {
+  @apply text-3xl md:text-4xl lg:text-5xl;
+}
+
+h3 {
+  @apply text-2xl md:text-3xl lg:text-4xl;
+}
+
+/* Mobile Navigation Icons */
+.mobile-nav-icon {
+  @apply flex cursor-pointer flex-col items-center justify-center text-gray-800 transition-colors duration-200 hover:text-black md:hidden;
+}
+
+/* Section Headings */
+.Seaction-heading {
+  @apply mb-6 text-2xl font-bold tracking-tight text-black md:text-3xl;
+}
+
+/* Scrollbar Hiding */
 .no-scrollbar::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Edge, Opera */
+  display: none;
 }
 
 .no-scrollbar {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-/* Custom line clamp for description text */
+/* Custom Line Clamps */
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -33,22 +80,41 @@
   overflow: hidden;
 }
 
-/* Service card hover effects */
+/* Premium Card Styles */
+.premium-card {
+  @apply bg-white border border-gray-200 rounded-xl shadow-sm transition-all duration-300 hover:shadow-xl hover:border-black;
+}
+
+/* Service Card Effects */
 .service-card {
-  transition:
-    transform 0.2s ease-in-out,
-    box-shadow 0.2s ease-in-out;
+  @apply bg-white border border-gray-200 rounded-xl overflow-hidden transition-all duration-300;
 }
 
 .service-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  @apply shadow-2xl border-black transform -translate-y-1;
 }
 
-/* Custom animations for desktop message */
+/* Premium Button Styles */
+.btn-primary {
+  @apply bg-black text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:bg-gray-900 hover:shadow-lg active:scale-95;
+}
+
+.btn-secondary {
+  @apply bg-white text-black border-2 border-black px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:bg-black hover:text-white active:scale-95;
+}
+
+.btn-outline {
+  @apply border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:border-black hover:text-black active:scale-95;
+}
+
+/* Premium Input Styles */
+.input-premium {
+  @apply w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-black focus:ring-2 focus:ring-gray-200 focus:outline-none transition-all duration-200 bg-white text-black;
+}
+
+/* Animations */
 @keyframes float {
-  0%,
-  100% {
+  0%, 100% {
     transform: translateY(0px);
   }
   50% {
@@ -60,10 +126,8 @@
   animation: float 3s ease-in-out infinite;
 }
 
-/* Pulse animation with different timing */
 @keyframes gentle-pulse {
-  0%,
-  100% {
+  0%, 100% {
     opacity: 0.3;
     transform: scale(1);
   }
@@ -75,4 +139,59 @@
 
 .animate-gentle-pulse {
   animation: gentle-pulse 4s ease-in-out infinite;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.5s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out;
+}
+
+/* Premium Gradient Backgrounds */
+.gradient-radial {
+  background: radial-gradient(circle at center, #fafafa 0%, #ffffff 100%);
+}
+
+.gradient-mesh {
+  background: 
+    linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.02) 50%, transparent 100%),
+    linear-gradient(0deg, transparent 0%, rgba(0,0,0,0.02) 50%, transparent 100%);
+  background-size: 20px 20px;
+}
+
+/* Premium Dividers */
+.divider-premium {
+  @apply h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent my-8;
+}
+
+/* Loading States */
+.skeleton {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+/* Focus Visible for Accessibility */
+*:focus-visible {
+  @apply outline-2 outline-offset-2 outline-black;
 }

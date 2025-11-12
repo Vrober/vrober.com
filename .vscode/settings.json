@@ -15,5 +15,16 @@
     ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
     ["className\\s*:\\s*['\"]([^'\"]*)['\"]", "([^'\"]*)"],
     ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
-  ]
+  ],
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "scope": "comment",
+        "settings": {
+          "fontStyle": "italic", // or "bold", "underline"
+          "foreground": "#595959" // a different color for comments
+        }
+      }
+    ]
+  }
 }

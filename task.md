@@ -1,4 +1,4 @@
-# ✅ What's been Done:
+# ✅ What's been Done
 
 - logos imported
 - favicon added
