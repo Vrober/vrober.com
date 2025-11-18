@@ -163,11 +163,40 @@ export const fetchAvailableTimeSlots = async (date, serviceId) => {
  */
 export const createBooking = async (bookingData) => {
   try {
-    // bookingData expects: vendorId, serviceId, serviceDate, serviceTime, address, location {lat,lng}, price, description, specialInstructions, paymentMethod
-    const response = await api.post('/bookings', bookingData);
+    // Validate and clean the booking data before sending
+    const cleanedData = {
+      vendorId: bookingData.vendorId,
+      serviceId: bookingData.serviceId,
+      serviceDate: new Date(bookingData.serviceDate).toISOString(),
+      serviceTime: bookingData.serviceTime,
+      address: bookingData.address,
+      location: bookingData.location && bookingData.location.lat && bookingData.location.lng 
+        ? { lat: Number(bookingData.location.lat), lng: Number(bookingData.location.lng) }
+        : undefined,
+      price: Number(bookingData.price) || 0,
+      description: bookingData.description || '',
+      specialInstructions: bookingData.specialInstructions || '',
+      paymentMethod: bookingData.paymentMethod || 'cash'
+    };
+    
+    // Remove undefined fields
+    Object.keys(cleanedData).forEach(key => {
+      if (cleanedData[key] === undefined) {
+        delete cleanedData[key];
+      }
+    });
+    
+    console.log('Sending booking data:', cleanedData);
+    const response = await api.post('/bookings', cleanedData);
+    console.log('Booking response:', response.data);
     return response.data.booking;
   } catch (error) {
-    console.error('Error creating booking (API):', error);
+    console.error('Error creating booking:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      bookingData
+    });
     throw error;
   }
 };

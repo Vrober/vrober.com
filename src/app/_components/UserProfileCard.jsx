@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import Image from 'next/image';
 import { FaCamera, FaStar } from 'react-icons/fa6';
 import { useEffect, useState } from 'react';
@@ -39,11 +39,17 @@ export default function UserProfileCard() {
       <div className="p-6 text-center">
         {/* Profile Avatar */}
         <div className="relative mb-4">
-          <div className="mx-auto h-24 w-24 overflow-hidden rounded-full shadow-lg ring-4 ring-white bg-zinc-100">
+          <div className="mx-auto h-24 w-24 overflow-hidden rounded-full bg-zinc-100 shadow-lg ring-4 ring-white">
             {loading ? (
               <div className="h-full w-full animate-pulse bg-zinc-200" />
             ) : (
-              <Image src={avatar} alt={name} width={96} height={96} className="h-full w-full object-cover" />
+              <Image
+                src={avatar}
+                alt={name}
+                width={96}
+                height={96}
+                className="h-full w-full object-cover"
+              />
             )}
           </div>
           {/* Camera Icon (non-functional placeholder) */}
@@ -65,22 +71,30 @@ export default function UserProfileCard() {
         {/* Rating */}
         <div className="mb-6 flex items-center justify-center space-x-1">
           <FaStar className="h-4 w-4 text-yellow-400" />
-          <span className="text-lg font-bold text-gray-900">{(stats.avgRating || 0).toFixed(1)}</span>
+          <span className="text-lg font-bold text-gray-900">
+            {(stats.avgRating || 0).toFixed(1)}
+          </span>
           <span className="text-sm text-gray-600">rating</span>
         </div>
 
         {/* Stats */}
         <div className="flex items-center justify-around border-t border-gray-100 pt-4">
           <div className="text-center">
-            <div className="mb-1 text-2xl font-bold text-blue-600">{stats.orders || 0}</div>
+            <div className="mb-1 text-2xl font-bold text-blue-600">
+              {stats.orders || 0}
+            </div>
             <div className="text-sm text-gray-600">Orders</div>
           </div>
           <div className="text-center">
-            <div className="mb-1 text-2xl font-bold text-green-600">{(stats.avgRating || 0).toFixed(1)}</div>
+            <div className="mb-1 text-2xl font-bold text-green-600">
+              {(stats.avgRating || 0).toFixed(1)}
+            </div>
             <div className="text-sm text-gray-600">Rating</div>
           </div>
           <div className="text-center">
-            <div className="mb-1 text-2xl font-bold text-purple-600">{stats.points || 0}</div>
+            <div className="mb-1 text-2xl font-bold text-purple-600">
+              {stats.points || 0}
+            </div>
             <div className="text-sm text-gray-600">Points</div>
           </div>
         </div>

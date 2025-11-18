@@ -13,8 +13,8 @@ export default function Mobileheader() {
           height={512}
         />
       </div>
-      <div className="flex items-center gap-1 text-zinc-600">
-        <FaLocationDot className="text-2xl text-blue-700" />
+      <div className="flex items-center gap-1 text-black">
+        <FaLocationDot className="text-2xl text-black" />
         <span>Ranchi, JH</span>
       </div>
     </div>

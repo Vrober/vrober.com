@@ -18,7 +18,8 @@ export default function VendorDashboard() {
           </div>
         </div>
         <p className="mt-8 text-gray-600">
-          This is a starter skeleton for the vendor panel. We&apos;ll wire live metrics once vendor auth and data are ready.
+          This is a starter skeleton for the vendor panel. We&apos;ll wire live
+          metrics once vendor auth and data are ready.
         </p>
       </div>
     </div>

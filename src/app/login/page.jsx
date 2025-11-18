@@ -100,12 +100,12 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
       {/* Header with Logo */}
-      <div className="sticky top-0 bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-200 z-50">
-        <div className="flex items-center justify-between px-5 py-4 max-w-7xl mx-auto">
+      <div className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 shadow-sm backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
           {step === 'otp' && (
             <button
               onClick={handleChangeNumber}
-              className="flex items-center gap-2 text-gray-700 hover:text-black transition-colors duration-200 font-medium"
+              className="flex items-center gap-2 font-medium text-gray-700 transition-colors duration-200 hover:text-black"
               disabled={loading}
             >
               <FaArrowLeft className="h-5 w-5" />
@@ -129,8 +129,8 @@ export default function Login() {
       <div className="px-5 py-12">
         <div className="mx-auto max-w-md">
           {/* Title Section */}
-          <div className="mb-10 animate-slide-in">
-            <h1 className="text-3xl font-bold text-black tracking-tight">
+          <div className="animate-slide-in mb-10">
+            <h1 className="text-3xl font-bold tracking-tight text-black">
               {step === 'phone' ? 'Welcome to Vrober' : 'Verify your number'}
             </h1>
             <p className="mt-3 text-base text-gray-600">
@@ -142,7 +142,7 @@ export default function Login() {
 
           {/* Error Message */}
           {error && (
-            <div className="mb-6 flex items-start gap-3 rounded-xl bg-black text-white p-4 text-sm animate-slide-in">
+            <div className="animate-slide-in mb-6 flex items-start gap-3 rounded-xl bg-black p-4 text-sm text-white">
               <span className="mt-0.5 text-lg">⚠️</span>
               <span>{error}</span>
             </div>
@@ -150,19 +150,27 @@ export default function Login() {
 
           {/* Dev Testing Info */}
           {generatedOTP && step === 'otp' && (
-            <div className="mb-6 rounded-xl border-2 border-black bg-white p-4 text-sm text-black animate-slide-in">
-              <strong className="block mb-1">🔧 Development Mode</strong>
-              <p>Your OTP is <strong className="text-2xl font-bold ml-2">{generatedOTP}</strong></p>
+            <div className="animate-slide-in mb-6 rounded-xl border-2 border-black bg-white p-4 text-sm text-black">
+              <strong className="mb-1 block">🔧 Development Mode</strong>
+              <p>
+                Your OTP is{' '}
+                <strong className="ml-2 text-2xl font-bold">
+                  {generatedOTP}
+                </strong>
+              </p>
             </div>
           )}
 
           {/* Phone Number Form */}
           {step === 'phone' && (
-            <form onSubmit={handleSendOTP} className="space-y-6 animate-fade-in">
+            <form
+              onSubmit={handleSendOTP}
+              className="animate-fade-in space-y-6"
+            >
               <div>
                 <label
                   htmlFor="phone"
-                  className="mb-3 block text-sm font-semibold text-gray-800 tracking-wide"
+                  className="mb-3 block text-sm font-semibold tracking-wide text-gray-800"
                 >
                   WhatsApp Number
                 </label>
@@ -176,14 +184,15 @@ export default function Login() {
                     value={phoneNumber}
                     onChange={handlePhoneChange}
                     placeholder="Enter WhatsApp number"
-                    className="w-full rounded-xl border-2 border-gray-300 bg-white py-4 pr-4 pl-16 text-lg font-semibold text-black placeholder:text-gray-400 focus:border-black focus:ring-4 focus:ring-gray-200 focus:outline-none transition-all duration-200"
+                    className="w-full rounded-xl border-2 border-gray-300 bg-white py-4 pr-4 pl-16 text-lg font-semibold text-black transition-all duration-200 placeholder:text-gray-400 focus:border-black focus:ring-4 focus:ring-gray-200 focus:outline-none"
                     disabled={loading}
                     autoFocus
                     inputMode="numeric"
                   />
                 </div>
                 <p className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-                  <FaWhatsapp className="text-lg" /> You'll receive an OTP for verification
+                  <FaWhatsapp className="text-lg" /> You will receive an OTP for
+                  verification
                 </p>
               </div>
 
@@ -218,8 +227,8 @@ export default function Login() {
               </button>
 
               {/* Security Badge */}
-              <div className="flex items-center justify-center gap-2 text-sm text-gray-500 pt-2">
-                <FaShieldHalved className="text-black text-base" />
+              <div className="flex items-center justify-center gap-2 pt-2 text-sm text-gray-500">
+                <FaShieldHalved className="text-base text-black" />
                 <span>Secure & encrypted login</span>
               </div>
             </form>
@@ -227,11 +236,14 @@ export default function Login() {
 
           {/* OTP Form */}
           {step === 'otp' && (
-            <form onSubmit={handleVerifyOTP} className="space-y-6 animate-fade-in">
+            <form
+              onSubmit={handleVerifyOTP}
+              className="animate-fade-in space-y-6"
+            >
               <div>
                 <label
                   htmlFor="otp"
-                  className="mb-3 block text-sm font-semibold text-gray-800 tracking-wide"
+                  className="mb-3 block text-sm font-semibold tracking-wide text-gray-800"
                 >
                   Enter OTP
                 </label>
@@ -241,13 +253,13 @@ export default function Login() {
                   value={otp}
                   onChange={handleOtpChange}
                   placeholder="••••"
-                  className="w-full rounded-xl border-2 border-gray-300 bg-white px-4 py-5 text-center text-4xl font-bold tracking-[0.5em] text-black focus:border-black focus:ring-4 focus:ring-gray-200 focus:outline-none transition-all duration-200"
+                  className="w-full rounded-xl border-2 border-gray-300 bg-white px-4 py-5 text-center text-4xl font-bold tracking-[0.5em] text-black transition-all duration-200 focus:border-black focus:ring-4 focus:ring-gray-200 focus:outline-none"
                   disabled={loading}
                   autoFocus
                   inputMode="numeric"
                   maxLength={4}
                 />
-                <p className="mt-3 text-sm text-gray-600 text-center">
+                <p className="mt-3 text-center text-sm text-gray-600">
                   Enter the 4-digit code sent to your WhatsApp
                 </p>
               </div>
@@ -288,9 +300,10 @@ export default function Login() {
                   type="button"
                   onClick={handleSendOTP}
                   disabled={loading}
-                  className="text-sm font-semibold text-gray-700 hover:text-black transition-colors duration-200 hover:underline disabled:cursor-not-allowed disabled:text-gray-400"
+                  className="text-sm font-semibold text-gray-700 transition-colors duration-200 hover:text-black hover:underline disabled:cursor-not-allowed disabled:text-gray-400"
                 >
-                  Didn&apos;t receive OTP? <span className="font-bold">Resend</span>
+                  Didn&apos;t receive OTP?{' '}
+                  <span className="font-bold">Resend</span>
                 </button>
               </div>
             </form>
@@ -299,11 +312,17 @@ export default function Login() {
           {/* Footer Text */}
           <div className="mt-10 text-center text-xs text-gray-500">
             By continuing, you agree to Vrober&apos;s{' '}
-            <a href="/terms" className="text-black font-semibold hover:underline">
+            <a
+              href="/terms"
+              className="font-semibold text-black hover:underline"
+            >
               Terms of Service
             </a>{' '}
             and{' '}
-            <a href="/privacy" className="text-black font-semibold hover:underline">
+            <a
+              href="/privacy"
+              className="font-semibold text-black hover:underline"
+            >
               Privacy Policy
             </a>
           </div>
@@ -311,9 +330,9 @@ export default function Login() {
       </div>
 
       {/* Decorative Elements */}
-      <div className="fixed right-0 bottom-0 left-0 -z-10 h-64 bg-gradient-to-t from-gray-100 via-gray-50 to-transparent opacity-60 pointer-events-none" />
-      <div className="fixed top-0 right-0 -z-10 w-96 h-96 bg-gray-900 rounded-full blur-3xl opacity-5 pointer-events-none" />
-      <div className="fixed bottom-0 left-0 -z-10 w-96 h-96 bg-black rounded-full blur-3xl opacity-5 pointer-events-none" />
+      <div className="pointer-events-none fixed right-0 bottom-0 left-0 -z-10 h-64 bg-gradient-to-t from-gray-100 via-gray-50 to-transparent opacity-60" />
+      <div className="pointer-events-none fixed top-0 right-0 -z-10 h-96 w-96 rounded-full bg-gray-900 opacity-5 blur-3xl" />
+      <div className="pointer-events-none fixed bottom-0 left-0 -z-10 h-96 w-96 rounded-full bg-black opacity-5 blur-3xl" />
     </div>
   );
 }

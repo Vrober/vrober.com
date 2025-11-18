@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 /**
@@ -27,9 +28,9 @@ export default function BookNowButton({
 
   // Default styles for different variants
   const variantStyles = {
-    primary: 'bg-blue-600 text-white hover:bg-blue-700',
+    primary: 'bg-gray-800 text-white hover:bg-gray-700',
     secondary: 'bg-gray-600 text-white hover:bg-gray-700',
-    outline: 'border-2 border-blue-600 text-blue-600 hover:bg-blue-50',
+    outline: 'border-2 border-gray-800 text-gray-800 hover:bg-gray-100',
   };
 
   const baseStyles =
@@ -87,7 +88,9 @@ export function ServiceCard({ service }) {
     <div className="rounded-lg border-2 border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-lg">
       {/* Service Image (optional) */}
       {service.image && (
-        <img
+        <Image
+          width={1000}
+          height={1000}
           src={service.image}
           alt={service.name}
           className="mb-4 h-48 w-full rounded-lg object-cover"

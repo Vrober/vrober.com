@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -12,31 +12,38 @@ export default function MHomeCategory() {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    api.get('/categories')
-      .then(res => {
+    api
+      .get('/categories')
+      .then((res) => {
         if (!active) return;
         const cats = res.data.categories || [];
         // Filter active categories and sort by order
-        const activeCats = cats.filter(c => c.isActive !== false).sort((a, b) => (a.order || 0) - (b.order || 0));
+        const activeCats = cats
+          .filter((c) => c.isActive !== false)
+          .sort((a, b) => (a.order || 0) - (b.order || 0));
         setCategories(activeCats);
       })
-      .catch(err => {
+      .catch((err) => {
         if (!active) return;
         setError(err.response?.data?.message || 'Failed to load categories');
       })
       .finally(() => active && setLoading(false));
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
 
   const shown = categories.slice(0, 7);
 
   return (
     <>
-      <h1 className="Seaction-heading">What are you looking for?</h1>
-      {loading && <p className="text-xs text-zinc-500">Loading categories...</p>}
+      <h1 className="Seaction-heading text-black">What are you looking for?</h1>
+      {loading && (
+        <p className="text-xs text-gray-600">Loading categories...</p>
+      )}
       {error && <p className="text-xs text-red-600">{error}</p>}
       <div className="flex flex-wrap justify-between gap-y-3">
-        {shown.map(category => (
+        {shown.map((category) => (
           <CategoryCard
             key={category._id}
             icon={category.imageUrl}
@@ -67,22 +74,29 @@ const CategoryCard = ({ icon, title, id, emoji }) => {
   return (
     <div
       onClick={handleClick}
-      className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl bg-zinc-50 p-4 shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95"
+      className="flex h-20 w-20 cursor-pointer flex-col items-center justify-between overflow-hidden rounded-xl border border-gray-200 bg-gray-50 p-2 shadow-sm transition-all hover:scale-105 hover:border-black hover:shadow-md active:scale-95"
     >
-      {icon ? (
-        <Image
-          src={icon}
-          alt={title}
-          width={48}
-          height={48}
-          className="mb-2 h-full w-full object-cover"
-        />
-      ) : emoji ? (
-        <span className="text-3xl mb-1">{emoji}</span>
-      ) : (
-        <div className="w-12 h-12 bg-gray-200 rounded mb-2"></div>
-      )}
-      <p className="text-center text-xs line-clamp-1">{title}</p>
+      <div className="flex flex-1 items-center justify-center">
+        {icon ? (
+          <Image
+            src={icon}
+            alt={title}
+            width={40}
+            height={40}
+            className="h-10 w-10 rounded object-cover transition-all duration-300 hover:scale-110"
+          />
+        ) : emoji ? (
+          <span className="text-2xl">{emoji}</span>
+        ) : (
+          <div className="h-10 w-10 rounded bg-gray-200"></div>
+        )}
+      </div>
+      <p
+        className="category-label text-center text-xs leading-tight font-medium text-black"
+        style={{ fontSize: '10px' }}
+      >
+        {title}
+      </p>
     </div>
   );
 };

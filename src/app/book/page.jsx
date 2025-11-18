@@ -1,22 +1,22 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { fetchServices, createBooking } from "@/lib/bookingService";
-import { FaCalendarAlt, FaClock, FaCheckCircle } from "react-icons/fa";
+import { useEffect, useState } from 'react';
+import { fetchServices, createBooking } from '@/lib/bookingService';
+import { FaCalendarAlt, FaClock, FaCheckCircle } from 'react-icons/fa';
 
 export default function Book() {
   const [services, setServices] = useState([]);
-  const [serviceId, setServiceId] = useState("");
-  const [vendorId, setVendorId] = useState("");
-  const [serviceName, setServiceName] = useState("");
+  const [serviceId, setServiceId] = useState('');
+  const [vendorId, setVendorId] = useState('');
+  const [serviceName, setServiceName] = useState('');
   const [price, setPrice] = useState(0);
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [address, setAddress] = useState("");
-  const [lat, setLat] = useState("");
-  const [lng, setLng] = useState("");
-  const [specialInstructions, setSpecialInstructions] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [address, setAddress] = useState('');
+  const [lat, setLat] = useState('');
+  const [lng, setLng] = useState('');
+  const [specialInstructions, setSpecialInstructions] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('cash');
   const [loading, setLoading] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [errors, setErrors] = useState({});
@@ -26,47 +26,69 @@ export default function Book() {
       const data = await fetchServices();
       setServices(data);
       const params = new URLSearchParams(window.location.search);
-      const sId = params.get("serviceId");
+      const sId = params.get('serviceId');
+      const sName = params.get('serviceName');
+      const sPrice = params.get('price');
+
       if (sId) {
-        const found = data.find((s) => String(s.id) === String(sId));
-        if (found) selectService(found);
+        // If service details are passed via URL, use them directly
+        if (sName && sPrice) {
+          setServiceId(sId);
+          setServiceName(decodeURIComponent(sName));
+          setPrice(Number(sPrice) || 0);
+          setErrors((e) => ({ ...e, serviceId: '' }));
+        } else {
+          // Otherwise, find the service in the data
+          const found = data.find((s) => String(s.id) === String(sId));
+          if (found) selectService(found);
+        }
       }
     };
     load();
   }, []);
 
   const availableTimeSlots = [
-    "09:00 AM",
-    "10:00 AM",
-    "11:00 AM",
-    "12:00 PM",
-    "02:00 PM",
-    "03:00 PM",
-    "04:00 PM",
-    "05:00 PM",
+    '09:00 AM',
+    '10:00 AM',
+    '11:00 AM',
+    '12:00 PM',
+    '02:00 PM',
+    '03:00 PM',
+    '04:00 PM',
+    '05:00 PM',
   ];
 
   const selectService = (s) => {
     setServiceId(s.id);
-    setVendorId(s.vendorId || "");
+    setVendorId(s.vendorId || '');
     setServiceName(s.name);
     setPrice(s.price || 0);
-    setErrors((e) => ({ ...e, serviceId: "" }));
+    setErrors((e) => ({ ...e, serviceId: '' }));
   };
 
   const submitBooking = async () => {
+    // Check if user is authenticated
+    const token = localStorage.getItem('accessToken');
+    const user = localStorage.getItem('user');
+    
+    if (!token || !user) {
+      alert('Please log in to book a service');
+      window.location.href = '/login';
+      return;
+    }
+    
     const newErrors = {};
-    if (!serviceId) newErrors.serviceId = "Select a service";
-    if (!date) newErrors.date = "Pick a date";
-    if (!time) newErrors.time = "Pick a time";
-    if (!address) newErrors.address = "Enter address";
+    if (!serviceId) newErrors.serviceId = 'Select a service';
+    if (!date) newErrors.date = 'Pick a date';
+    if (!time) newErrors.time = 'Pick a time';
+    if (!address) newErrors.address = 'Enter address';
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
     setLoading(true);
     try {
       const payload = {
-        vendorId,
+        vendorId: vendorId || serviceId, // Use serviceId as fallback if vendorId is missing
         serviceId,
         serviceDate: date,
         serviceTime: time,
@@ -80,27 +102,33 @@ export default function Book() {
         specialInstructions,
         paymentMethod,
       };
+      
+      // Log the payload for debugging
+      console.log('Booking payload:', payload);
+      
       await createBooking(payload);
       setShowConfirmation(true);
       setTimeout(() => {
-        window.location.href = "/bookings";
+        window.location.href = '/bookings';
       }, 2000);
     } catch (err) {
-      alert(err?.response?.data?.message || "Failed to create booking");
+      console.error('Booking submission error:', err);
+      const errorMessage = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Failed to create booking';
+      alert(`Booking failed: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const getMinDate = () => new Date().toISOString().split("T")[0];
+  const getMinDate = () => new Date().toISOString().split('T')[0];
   const getMaxDate = () => {
     const d = new Date();
     d.setMonth(d.getMonth() + 3);
-    return d.toISOString().split("T")[0];
+    return d.toISOString().split('T')[0];
   };
 
   return (
-    <div className="min-h-screen bg-white px-4 py-8">
+    <div className="min-h-screen bg-white px-4 py-8 pb-24">
       <div className="mx-auto max-w-3xl">
         <h1 className="mb-8 text-3xl font-bold text-black">Book a Service</h1>
         <div className="grid gap-8 md:grid-cols-2">
@@ -109,16 +137,16 @@ export default function Book() {
               <label className="mb-2 block text-sm font-semibold text-black">
                 Select Service *
               </label>
-              <div className="max-h-72 overflow-y-auto border rounded-lg divide-y">
+              <div className="max-h-72 divide-y overflow-y-auto rounded-lg border">
                 {services.map((s) => (
                   <button
                     key={s.id}
                     type="button"
                     onClick={() => selectService(s)}
-                    className={`w-full text-left px-4 py-3 flex items-center justify-between transition ${
+                    className={`flex w-full items-center justify-between px-4 py-3 text-left transition ${
                       serviceId === s.id
-                        ? "bg-black text-white"
-                        : "hover:bg-gray-100"
+                        ? 'bg-black text-white'
+                        : 'hover:bg-gray-100'
                     }`}
                   >
                     <span className="font-medium">{s.name}</span>
@@ -132,7 +160,7 @@ export default function Book() {
             </div>
             <div>
               <label className="mb-2 block text-sm font-semibold text-black">
-                <FaCalendarAlt className="inline mr-2" /> Date *
+                <FaCalendarAlt className="mr-2 inline" /> Date *
               </label>
               <input
                 type="date"
@@ -140,7 +168,7 @@ export default function Book() {
                 min={getMinDate()}
                 max={getMaxDate()}
                 onChange={(e) => setDate(e.target.value)}
-                className={`input-premium ${errors.date && "border-red-500"}`}
+                className={`input-premium ${errors.date && 'border-red-500'}`}
               />
               {errors.date && (
                 <p className="mt-1 text-sm text-red-600">{errors.date}</p>
@@ -148,7 +176,7 @@ export default function Book() {
             </div>
             <div>
               <label className="mb-2 block text-sm font-semibold text-black">
-                <FaClock className="inline mr-2" /> Time *
+                <FaClock className="mr-2 inline" /> Time *
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {availableTimeSlots.map((slot) => (
@@ -158,8 +186,8 @@ export default function Book() {
                     onClick={() => setTime(slot)}
                     className={`rounded-lg border px-2 py-2 text-sm ${
                       time === slot
-                        ? "bg-black text-white border-black"
-                        : "border-gray-300 hover:border-black"
+                        ? 'border-black bg-black text-white'
+                        : 'border-gray-300 hover:border-black'
                     }`}
                   >
                     {slot}
@@ -180,7 +208,7 @@ export default function Book() {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 rows={4}
-                className={`input-premium ${errors.address && "border-red-500"}`}
+                className={`input-premium ${errors.address && 'border-red-500'}`}
                 placeholder="Flat / Street / City"
               />
               {errors.address && (
@@ -240,21 +268,23 @@ export default function Book() {
               type="button"
               onClick={submitBooking}
               disabled={loading}
-              className="btn-primary w-full"
+              className="btn-primary w-full mb-8"
             >
               {loading
-                ? "Booking..."
+                ? 'Booking...'
                 : serviceId
                   ? `Confirm Booking (₹${price})`
-                  : "Select a service"}
+                  : 'Select a service'}
             </button>
           </div>
         </div>
         {showConfirmation && (
-          <div className="mt-8 rounded-xl border p-8 text-center animate-fade-in bg-white">
+          <div className="animate-fade-in mt-8 rounded-xl border bg-white p-8 text-center">
             <FaCheckCircle className="mx-auto mb-4 text-5xl text-green-600" />
-            <h2 className="text-2xl font-bold mb-2">Booking Confirmed</h2>
-            <p className="text-sm text-gray-600">Redirecting to your bookings...</p>
+            <h2 className="mb-2 text-2xl font-bold">Booking Confirmed</h2>
+            <p className="text-sm text-gray-600">
+              Redirecting to your bookings...
+            </p>
           </div>
         )}
       </div>

@@ -2,7 +2,7 @@ import { FaArrowLeft, FaEllipsisVertical } from 'react-icons/fa6';
 
 export default function ProfileHeader() {
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-600 px-4 py-6">
+    <div className="relative overflow-hidden bg-gray-800 px-4 py-6">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-0 right-0 h-64 w-64 translate-x-32 -translate-y-32 rounded-full bg-white"></div>

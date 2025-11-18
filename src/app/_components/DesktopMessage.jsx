@@ -20,17 +20,17 @@ export default function DesktopMessage() {
   if (!isVisible) return null;
 
   return (
-    <div className="relative hidden min-h-screen overflow-hidden bg-gradient-to-br from-blue-50 via-white to-indigo-100 md:flex">
+    <div className="relative hidden min-h-screen overflow-hidden bg-white md:flex">
       {/* Animated Background Elements */}
       <div className="absolute inset-0">
         {/* Floating Circles */}
-        <div className="absolute top-20 left-20 h-32 w-32 animate-pulse rounded-full bg-blue-200 opacity-30"></div>
+        <div className="absolute top-20 left-20 h-32 w-32 animate-pulse rounded-full bg-gray-800 opacity-10"></div>
         <div
-          className="absolute top-60 right-32 h-24 w-24 animate-bounce rounded-full bg-indigo-200 opacity-40"
+          className="absolute top-60 right-32 h-24 w-24 animate-bounce rounded-full bg-gray-200 opacity-40"
           style={{ animationDelay: '1s' }}
         ></div>
         <div
-          className="absolute bottom-40 left-1/3 h-40 w-40 animate-pulse rounded-full bg-purple-200 opacity-20"
+          className="absolute bottom-40 left-1/3 h-40 w-40 animate-pulse rounded-full bg-gray-800 opacity-10"
           style={{ animationDelay: '2s' }}
         ></div>
 
@@ -73,22 +73,19 @@ export default function DesktopMessage() {
           {/* Main Message */}
           <div className="space-y-6">
             <h1 className="text-4xl leading-tight font-bold text-gray-800 md:text-5xl">
-              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Vrober
-              </span>{' '}
-              is Mobile First! 📱
+              <span className="text-green-500">Vrober</span> is Mobile First! 📱
             </h1>
 
-            <p className="mx-auto max-w-xl text-xl leading-relaxed text-gray-600">
+            <p className="mx-auto max-w-xl text-xl leading-relaxed text-gray-800">
               We&apos;ve crafted an amazing mobile experience just for you! Our
               desktop version is currently under development.
             </p>
 
-            <div className="mx-auto max-w-md rounded-2xl border border-blue-200 bg-blue-50 p-6">
-              <p className="mb-2 font-medium text-blue-800">
+            <div className="mx-auto max-w-md rounded-2xl border border-black bg-gray-50 p-6">
+              <p className="mb-2 font-medium text-gray-800">
                 📱 For the best experience:
               </p>
-              <ul className="space-y-1 text-sm text-blue-700">
+              <ul className="space-y-1 text-sm text-gray-800">
                 <li>• Open this website on your mobile device</li>
                 <li>• Add to your home screen for quick access</li>
                 <li>• Enjoy our optimized mobile interface</li>
@@ -103,20 +100,20 @@ export default function DesktopMessage() {
                 onClick={() =>
                   navigator.clipboard.writeText(window.location.href)
                 }
-                className="transform rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-4 font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                className="transform rounded-xl bg-gray-800 px-8 py-4 font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
               >
                 📋 Copy Link to Share
               </button>
 
               <button
                 onClick={() => setIsVisible(false)}
-                className="transform rounded-xl border-2 border-gray-300 bg-white px-8 py-4 font-semibold text-gray-700 transition-all duration-300 hover:scale-105 hover:border-gray-400"
+                className="transform rounded-xl border-2 border-gray-800 bg-white px-8 py-4 font-semibold text-gray-800 transition-all duration-300 hover:scale-105 hover:bg-gray-100"
               >
                 Continue Anyway
               </button>
             </div>
 
-            <p className="mt-4 text-sm text-gray-500">
+            <p className="mt-4 text-sm text-gray-800">
               💻 Desktop version coming soon with more features!
             </p>
           </div>
@@ -124,7 +121,7 @@ export default function DesktopMessage() {
       </div>
 
       {/* Decorative Elements */}
-      <div className="absolute bottom-0 left-0 h-32 w-full bg-gradient-to-t from-blue-100 to-transparent opacity-50"></div>
+      <div className="absolute bottom-0 left-0 h-32 w-full bg-gradient-to-t from-gray-100 to-transparent opacity-50"></div>
     </div>
   );
 }

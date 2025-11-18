@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import { useEffect, useState } from 'react';
 import { fetchUserBookings } from '@/lib/bookingService';
 
@@ -35,11 +35,16 @@ export default function OrderHistoryPage() {
       )}
       <div className="space-y-3">
         {list.map((b) => (
-          <div key={b.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+          <div
+            key={b.id}
+            className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-semibold">{b.serviceName}</p>
-                <p className="text-sm text-zinc-500">{b.vendorName || 'Vendor'} • {b.date?.slice(0,10)} {b.time}</p>
+                <p className="text-sm text-zinc-500">
+                  {b.vendorName || 'Vendor'} • {b.date?.slice(0, 10)} {b.time}
+                </p>
               </div>
               <div className="text-right">
                 <p className="font-bold">₹ {b.price || 0}</p>

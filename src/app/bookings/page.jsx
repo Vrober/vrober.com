@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import { fetchUserBookings, cancelBooking } from '@/lib/bookingService';
@@ -35,9 +35,9 @@ export default function BookingsPage() {
         <h1 className="mb-6 text-3xl font-bold text-black">My Bookings</h1>
         {loading ? (
           <div className="space-y-3">
-            <div className="h-20 w-full rounded-lg skeleton" />
-            <div className="h-20 w-full rounded-lg skeleton" />
-            <div className="h-20 w-full rounded-lg skeleton" />
+            <div className="skeleton h-20 w-full rounded-lg" />
+            <div className="skeleton h-20 w-full rounded-lg" />
+            <div className="skeleton h-20 w-full rounded-lg" />
           </div>
         ) : bookings.length === 0 ? (
           <p className="text-gray-600">No bookings yet.</p>
@@ -61,10 +61,10 @@ export default function BookingsPage() {
                       b.status === 'pending'
                         ? 'bg-gray-100 text-gray-800'
                         : b.status === 'accepted'
-                        ? 'bg-black text-white'
-                        : b.status === 'completed'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-100 text-red-700'
+                          ? 'bg-black text-white'
+                          : b.status === 'completed'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-700'
                     }`}
                   >
                     {b.status}
@@ -82,11 +82,7 @@ export default function BookingsPage() {
             ))}
           </div>
         )}
-        {error && (
-          <p className="mt-4 text-sm text-red-600">
-            {error}
-          </p>
-        )}
+        {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
       </div>
     </div>
   );

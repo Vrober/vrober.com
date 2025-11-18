@@ -1,0 +1,34 @@
+# Robots.txt for Vrober - Home Services Platform
+# Last Updated: November 13, 2025
+
+# Allow all search engines to crawl public pages
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /private/
+Disallow: /profile/
+Disallow: /bookings/
+Disallow: /_next/
+Disallow: /static/
+
+# Googlebot specific rules
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /private/
+Disallow: /profile/
+Disallow: /bookings/
+
+# Bingbot specific rules
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /private/
+Disallow: /profile/
+Disallow: /bookings/
+
+# Sitemap location
+Sitemap: https://vrober.com/sitemap.xml

@@ -1,9 +1,14 @@
-"use client";
+'use client';
 import { useEffect, useState } from 'react';
 import api from '@/lib/axios';
 
 export default function PersonalInfoPage() {
-  const [form, setForm] = useState({ name: '', email: '', address: '', pinCode: '' });
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    address: '',
+    pinCode: '',
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -56,26 +61,49 @@ export default function PersonalInfoPage() {
       {loading ? (
         <p className="text-sm text-zinc-500">Loading...</p>
       ) : (
-        <form onSubmit={onSubmit} className="space-y-4 max-w-md">
+        <form onSubmit={onSubmit} className="max-w-md space-y-4">
           {message && <p className="text-sm text-green-600">{message}</p>}
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div>
             <label className="mb-1 block text-sm text-zinc-600">Name</label>
-            <input name="name" value={form.name} onChange={onChange} className="w-full rounded-md border px-3 py-2" />
+            <input
+              name="name"
+              value={form.name}
+              onChange={onChange}
+              className="w-full rounded-md border px-3 py-2"
+            />
           </div>
           <div>
             <label className="mb-1 block text-sm text-zinc-600">Email</label>
-            <input name="email" value={form.email} onChange={onChange} className="w-full rounded-md border px-3 py-2" />
+            <input
+              name="email"
+              value={form.email}
+              onChange={onChange}
+              className="w-full rounded-md border px-3 py-2"
+            />
           </div>
           <div>
             <label className="mb-1 block text-sm text-zinc-600">Address</label>
-            <input name="address" value={form.address} onChange={onChange} className="w-full rounded-md border px-3 py-2" />
+            <input
+              name="address"
+              value={form.address}
+              onChange={onChange}
+              className="w-full rounded-md border px-3 py-2"
+            />
           </div>
           <div>
             <label className="mb-1 block text-sm text-zinc-600">Pin Code</label>
-            <input name="pinCode" value={form.pinCode} onChange={onChange} className="w-full rounded-md border px-3 py-2" />
+            <input
+              name="pinCode"
+              value={form.pinCode}
+              onChange={onChange}
+              className="w-full rounded-md border px-3 py-2"
+            />
           </div>
-          <button disabled={saving} className="rounded-md bg-black px-4 py-2 text-white disabled:opacity-60">
+          <button
+            disabled={saving}
+            className="rounded-md bg-black px-4 py-2 text-white disabled:opacity-60"
+          >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </form>

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import { useEffect, useState } from 'react';
 import { FaStar } from 'react-icons/fa6';
 import api from '@/lib/axios';
@@ -38,7 +38,12 @@ export default function RecentBookings() {
     if (!serviceDate && !serviceTime) return 'N/A';
     try {
       const dateObj = serviceDate ? new Date(serviceDate) : null;
-      const dateStr = dateObj ? dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
+      const dateStr = dateObj
+        ? dateObj.toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+          })
+        : '';
       return `${dateStr} ${serviceTime || ''}`.trim();
     } catch {
       return serviceDate || serviceTime || 'N/A';
@@ -48,11 +53,19 @@ export default function RecentBookings() {
   const statusStyles = (status) => {
     switch (status) {
       case 'completed':
-        return { bg: 'bg-green-100', text: 'text-green-600', label: 'Completed' };
+        return {
+          bg: 'bg-green-100',
+          text: 'text-green-600',
+          label: 'Completed',
+        };
       case 'accepted':
         return { bg: 'bg-blue-100', text: 'text-blue-600', label: 'Upcoming' };
       case 'pending':
-        return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Pending' };
+        return {
+          bg: 'bg-yellow-100',
+          text: 'text-yellow-700',
+          label: 'Pending',
+        };
       case 'cancelled':
         return { bg: 'bg-red-100', text: 'text-red-600', label: 'Cancelled' };
       case 'rejected':
@@ -88,7 +101,9 @@ export default function RecentBookings() {
             className={`h-4 w-4 ${star <= rating ? 'text-yellow-400' : 'text-gray-300'}`}
           />
         ))}
-        <span className="ml-1 text-sm text-gray-600">{Number(rating).toFixed(1)}</span>
+        <span className="ml-1 text-sm text-gray-600">
+          {Number(rating).toFixed(1)}
+        </span>
       </div>
     );
   };
@@ -116,7 +131,7 @@ export default function RecentBookings() {
             >
               <div className="flex items-start space-x-3">
                 {/* Simple leading badge using first letter */}
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-black text-white font-semibold">
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-black font-semibold text-white">
                   {b.serviceId?.serviceName?.substring(0, 1) || 'S'}
                 </div>
                 <div className="flex-1">
