@@ -70,13 +70,13 @@ export default function Book() {
     // Check if user is authenticated
     const token = localStorage.getItem('accessToken');
     const user = localStorage.getItem('user');
-    
+
     if (!token || !user) {
       alert('Please log in to book a service');
       window.location.href = '/login';
       return;
     }
-    
+
     const newErrors = {};
     if (!serviceId) newErrors.serviceId = 'Select a service';
     if (!date) newErrors.date = 'Pick a date';
@@ -102,10 +102,10 @@ export default function Book() {
         specialInstructions,
         paymentMethod,
       };
-      
+
       // Log the payload for debugging
       console.log('Booking payload:', payload);
-      
+
       await createBooking(payload);
       setShowConfirmation(true);
       setTimeout(() => {
@@ -113,7 +113,11 @@ export default function Book() {
       }, 2000);
     } catch (err) {
       console.error('Booking submission error:', err);
-      const errorMessage = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Failed to create booking';
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        'Failed to create booking';
       alert(`Booking failed: ${errorMessage}`);
     } finally {
       setLoading(false);
@@ -268,7 +272,7 @@ export default function Book() {
               type="button"
               onClick={submitBooking}
               disabled={loading}
-              className="btn-primary w-full mb-8"
+              className="btn-primary mb-8 w-full"
             >
               {loading
                 ? 'Booking...'
