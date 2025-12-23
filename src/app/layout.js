@@ -1,5 +1,6 @@
 import ConditionalNav from './_components/ConditionalNav';
 import Footer from './_components/Footer';
+import { CartProvider } from '@/lib/cartContext';
 import './globals.css';
 
 export const metadata = {
@@ -11,9 +12,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="antialiased">
-        <ConditionalNav />
-        <main>{children}</main>
-        <Footer />
+        <CartProvider>
+          <ConditionalNav />
+          <main>{children}</main>
+          <Footer />
+        </CartProvider>
       </body>
     </html>
   );
