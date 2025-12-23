@@ -2,7 +2,7 @@ import ProfileHeader from '../_components/ProfileHeader';
 import ProfileMenu from '../_components/ProfileMenu';
 import ProfileSignOut from '../_components/ProfileSignOut';
 import UserProfileCard from '../_components/UserProfileCard';
-import ProtectedRoute from '../_components/auth/protactRoute';
+import ProtectedRoute from '../_components/ProtectedRoute';
 
 export default function ProfilePage() {
   return (

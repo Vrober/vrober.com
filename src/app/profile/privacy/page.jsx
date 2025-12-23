@@ -1,5 +1,7 @@
 'use client';
-export default function PrivacySecurityPage() {
+import ProtectedRoute from '@/app/_components/ProtectedRoute';
+
+function PrivacySecurityPageContent() {
   return (
     <div className="px-4 py-4">
       <h1 className="mb-4 text-xl font-semibold">Privacy & Security</h1>
@@ -18,5 +20,13 @@ export default function PrivacySecurityPage() {
         </section>
       </div>
     </div>
+  );
+}
+
+export default function PrivacySecurityPage() {
+  return (
+    <ProtectedRoute>
+      <PrivacySecurityPageContent />
+    </ProtectedRoute>
   );
 }

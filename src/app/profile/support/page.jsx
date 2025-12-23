@@ -1,5 +1,7 @@
 'use client';
-export default function SupportPage() {
+import ProtectedRoute from '@/app/_components/ProtectedRoute';
+
+function SupportPageContent() {
   return (
     <div className="px-4 py-4">
       <h1 className="mb-4 text-xl font-semibold">Help & Support</h1>
@@ -18,5 +20,13 @@ export default function SupportPage() {
         </section>
       </div>
     </div>
+  );
+}
+
+export default function SupportPage() {
+  return (
+    <ProtectedRoute>
+      <SupportPageContent />
+    </ProtectedRoute>
   );
 }

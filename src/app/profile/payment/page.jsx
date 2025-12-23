@@ -1,5 +1,7 @@
 'use client';
-export default function PaymentMethodsPage() {
+import ProtectedRoute from '@/app/_components/ProtectedRoute';
+
+function PaymentMethodsPageContent() {
   return (
     <div className="px-4 py-4">
       <h1 className="mb-4 text-xl font-semibold">Payment Methods</h1>
@@ -10,5 +12,13 @@ export default function PaymentMethodsPage() {
         <p className="text-sm text-zinc-500">No payment methods added yet.</p>
       </div>
     </div>
+  );
+}
+
+export default function PaymentMethodsPage() {
+  return (
+    <ProtectedRoute>
+      <PaymentMethodsPageContent />
+    </ProtectedRoute>
   );
 }

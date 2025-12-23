@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { fetchUserBookings } from '@/lib/bookingService';
+import ProtectedRoute from '@/app/_components/ProtectedRoute';
 
-export default function OrderHistoryPage() {
+function OrderHistoryPageContent() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -55,5 +56,13 @@ export default function OrderHistoryPage() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function OrderHistoryPage() {
+  return (
+    <ProtectedRoute>
+      <OrderHistoryPageContent />
+    </ProtectedRoute>
   );
 }

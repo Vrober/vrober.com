@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
 import api from '@/lib/axios';
+import ProtectedRoute from '@/app/_components/ProtectedRoute';
 
-export default function PersonalInfoPage() {
+function PersonalInfoPageContent() {
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -109,5 +110,13 @@ export default function PersonalInfoPage() {
         </form>
       )}
     </div>
+  );
+}
+
+export default function PersonalInfoPage() {
+  return (
+    <ProtectedRoute>
+      <PersonalInfoPageContent />
+    </ProtectedRoute>
   );
 }

@@ -2,7 +2,9 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/axios';
 
-export default function AddressesPage() {
+import ProtectedRoute from '@/app/_components/ProtectedRoute';
+
+function AddressesPageContent() {
   const [form, setForm] = useState({ address: '', pinCode: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -80,5 +82,14 @@ export default function AddressesPage() {
         </form>
       )}
     </div>
+  );
+}
+
+// Wrap with ProtectedRoute
+export default function AddressesPage() {
+  return (
+    <ProtectedRoute>
+      <AddressesPageContent />
+    </ProtectedRoute>
   );
 }

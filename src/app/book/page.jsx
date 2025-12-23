@@ -2,9 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { fetchServices, createBooking } from '@/lib/bookingService';
-import { FaCalendarAlt, FaClock, FaCheckCircle } from 'react-icons/fa';
+import Image from 'next/image';
+import {
+  FaCalendarAlt,
+  FaClock,
+  FaCheckCircle,
+  FaMapMarkerAlt,
+  FaMoneyBillWave,
+  FaStickyNote,
+  FaSearch,
+  FaChevronRight,
+} from 'react-icons/fa';
+import ProtectedRoute from '@/app/_components/ProtectedRoute';
 
-export default function Book() {
+function BookPage() {
   const [services, setServices] = useState([]);
   const [serviceId, setServiceId] = useState('');
   const [vendorId, setVendorId] = useState('');
@@ -25,6 +36,8 @@ export default function Book() {
   const [locationStatus, setLocationStatus] = useState('');
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [serviceSearch, setServiceSearch] = useState('');
+  const [step, setStep] = useState(1); // Multi-step form: 1=Service, 2=DateTime, 3=Details
 
   useEffect(() => {
     const load = async () => {
@@ -51,10 +64,14 @@ export default function Book() {
           setServiceName(decodeURIComponent(sName));
           setPrice(Number(sPrice) || 0);
           setErrors((e) => ({ ...e, serviceId: '' }));
+          setStep(2); // Skip to date/time step
         } else {
           // Otherwise, find the service in the data
           const found = data.find((s) => String(s.id) === String(sId));
-          if (found) selectService(found);
+          if (found) {
+            selectService(found);
+            setStep(2);
+          }
         }
       }
     };
@@ -78,7 +95,12 @@ export default function Book() {
     setServiceName(s.name);
     setPrice(s.price || 0);
     setErrors((e) => ({ ...e, serviceId: '' }));
+    setStep(2); // Move to next step after selection
   };
+
+  const filteredServices = services.filter((s) =>
+    s.name?.toLowerCase().includes(serviceSearch.toLowerCase())
+  );
 
   const getAddressFromCoordinates = async (latitude, longitude) => {
     try {
@@ -204,16 +226,7 @@ export default function Book() {
     .slice(0, 3);
 
   const submitBooking = async () => {
-    // Check if user is authenticated
-    const token = localStorage.getItem('accessToken');
-    const user = localStorage.getItem('user');
-
-    if (!token || !user) {
-      alert('Please log in to book a service');
-      window.location.href = '/login';
-      return;
-    }
-
+    // Validation
     const newErrors = {};
     if (!serviceId) newErrors.serviceId = 'Select a service';
     if (!date) newErrors.date = 'Pick a date';
@@ -269,40 +282,201 @@ export default function Book() {
     return d.toISOString().split('T')[0];
   };
 
+  const canProceedToStep2 = () => serviceId && serviceName;
+  const canProceedToStep3 = () => canProceedToStep2() && date && time;
+
   return (
-    <div className="min-h-screen bg-white px-4 py-8 pb-24">
-      <div className="mx-auto max-w-3xl">
-        <h1 className="mb-8 text-3xl font-bold text-black">Book a Service</h1>
-        <div className="grid gap-8 md:grid-cols-2">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-24">
+      {/* Header */}
+      <div className="bg-white shadow-sm">
+        <div className="mx-auto max-w-6xl px-4 py-6">
+          <h1 className="text-3xl font-bold text-gray-900">Book Your Service</h1>
+          <p className="mt-2 text-gray-600">
+            Professional services at your doorstep
+          </p>
+
+          {/* Progress Steps */}
+          <div className="mt-6 flex items-center justify-center gap-2">
+            <div className="flex items-center gap-2">
+              <div
+                className={`flex h-10 w-10 items-center justify-center rounded-full font-bold transition ${
+                  step >= 1
+                    ? 'bg-black text-white'
+                    : 'bg-gray-200 text-gray-500'
+                }`}
+              >
+                1
+              </div>
+              <span
+                className={`hidden font-medium sm:inline ${step >= 1 ? 'text-black' : 'text-gray-500'}`}
+              >
+                Select Service
+              </span>
+            </div>
+            <div className="h-0.5 w-12 bg-gray-300" />
+            <div className="flex items-center gap-2">
+              <div
+                className={`flex h-10 w-10 items-center justify-center rounded-full font-bold transition ${
+                  step >= 2
+                    ? 'bg-black text-white'
+                    : 'bg-gray-200 text-gray-500'
+                }`}
+              >
+                2
+              </div>
+              <span
+                className={`hidden font-medium sm:inline ${step >= 2 ? 'text-black' : 'text-gray-500'}`}
+              >
+                Date & Time
+              </span>
+            </div>
+            <div className="h-0.5 w-12 bg-gray-300" />
+            <div className="flex items-center gap-2">
+              <div
+                className={`flex h-10 w-10 items-center justify-center rounded-full font-bold transition ${
+                  step >= 3
+                    ? 'bg-black text-white'
+                    : 'bg-gray-200 text-gray-500'
+                }`}
+              >
+                3
+              </div>
+              <span
+                className={`hidden font-medium sm:inline ${step >= 3 ? 'text-black' : 'text-gray-500'}`}
+              >
+                Details & Confirm
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-6xl px-4 py-8">
+        {/* Step 1: Service Selection */}
+        {step === 1 && (
           <div className="space-y-6">
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-black">
-                Select Service *
-              </label>
-              <div className="max-h-72 divide-y overflow-y-auto rounded-lg border">
-                {services.map((s) => (
+            {/* Search Bar */}
+            <div className="relative">
+              <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={serviceSearch}
+                onChange={(e) => setServiceSearch(e.target.value)}
+                placeholder="Search for a service..."
+                className="w-full rounded-xl border border-gray-200 py-3 pl-12 pr-4 shadow-sm transition focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10"
+              />
+            </div>
+
+            {/* Service Cards Grid */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredServices.length > 0 ? (
+                filteredServices.map((s) => (
                   <button
                     key={s.id}
                     type="button"
                     onClick={() => selectService(s)}
-                    className={`flex w-full items-center justify-between px-4 py-3 text-left transition ${
+                    className={`group relative overflow-hidden rounded-xl border-2 bg-white p-5 text-left shadow-sm transition-all hover:shadow-lg ${
                       serviceId === s.id
-                        ? 'bg-black text-white'
-                        : 'hover:bg-gray-100'
+                        ? 'border-black ring-2 ring-black/20'
+                        : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <span className="font-medium">{s.name}</span>
-                    <span className="text-sm">₹{s.price}</span>
+                    {/* Service Image */}
+                    {s.imageUrl && (
+                      <div className="mb-4 h-40 w-full overflow-hidden rounded-lg bg-gray-100">
+                        <Image
+                          src={s.imageUrl}
+                          alt={s.name}
+                          width={300}
+                          height={160}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      </div>
+                    )}
+
+                    {/* Service Info */}
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-bold text-gray-900">
+                        {s.name}
+                      </h3>
+                      {s.description && (
+                        <p className="line-clamp-2 text-sm text-gray-600">
+                          {s.description}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="text-2xl font-bold text-black">
+                          ₹{s.price}
+                        </span>
+                        {serviceId === s.id && (
+                          <FaCheckCircle className="text-xl text-green-600" />
+                        )}
+                      </div>
+                    </div>
                   </button>
-                ))}
-              </div>
-              {errors.serviceId && (
-                <p className="mt-1 text-sm text-red-600">{errors.serviceId}</p>
+                ))
+              ) : (
+                <div className="col-span-full py-12 text-center">
+                  <p className="text-gray-500">
+                    {serviceSearch
+                      ? 'No services found matching your search'
+                      : 'Loading services...'}
+                  </p>
+                </div>
               )}
             </div>
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-black">
-                <FaCalendarAlt className="mr-2 inline" /> Date *
+
+            {errors.serviceId && (
+              <p className="text-center text-sm text-red-600">
+                {errors.serviceId}
+              </p>
+            )}
+
+            {/* Continue Button */}
+            <div className="flex justify-end pt-4">
+              <button
+                type="button"
+                onClick={() => canProceedToStep2() && setStep(2)}
+                disabled={!canProceedToStep2()}
+                className="flex items-center gap-2 rounded-xl bg-black px-8 py-3 font-semibold text-white shadow-lg transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Continue
+                <FaChevronRight />
+              </button>
+            </div>
+          </div>
+        )}
+        {/* Step 2: Date & Time Selection */}
+        {step === 2 && (
+          <div className="space-y-6">
+            {/* Selected Service Summary */}
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Selected Service</p>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {serviceName}
+                  </h3>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-500">Price</p>
+                  <p className="text-2xl font-bold text-black">₹{price}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="mt-4 text-sm font-medium text-gray-600 hover:text-black"
+              >
+                ← Change Service
+              </button>
+            </div>
+
+            {/* Date Selection */}
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <label className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+                <FaCalendarAlt className="text-black" />
+                Select Date *
               </label>
               <input
                 type="date"
@@ -310,26 +484,33 @@ export default function Book() {
                 min={getMinDate()}
                 max={getMaxDate()}
                 onChange={(e) => setDate(e.target.value)}
-                className={`input-premium ${errors.date && 'border-red-500'}`}
+                className={`w-full rounded-lg border-2 px-4 py-3 text-lg transition focus:outline-none focus:ring-2 focus:ring-black/20 ${
+                  errors.date
+                    ? 'border-red-500'
+                    : 'border-gray-300 focus:border-black'
+                }`}
               />
               {errors.date && (
-                <p className="mt-1 text-sm text-red-600">{errors.date}</p>
+                <p className="mt-2 text-sm text-red-600">{errors.date}</p>
               )}
             </div>
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-black">
-                <FaClock className="mr-2 inline" /> Time *
+
+            {/* Time Selection */}
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <label className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+                <FaClock className="text-black" />
+                Select Time *
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {availableTimeSlots.map((slot) => (
                   <button
                     key={slot}
                     type="button"
                     onClick={() => setTime(slot)}
-                    className={`rounded-lg border px-2 py-2 text-sm ${
+                    className={`rounded-lg border-2 px-4 py-3 text-center font-semibold transition ${
                       time === slot
-                        ? 'border-black bg-black text-white'
-                        : 'border-gray-300 hover:border-black'
+                        ? 'border-black bg-black text-white shadow-lg'
+                        : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50'
                     }`}
                   >
                     {slot}
@@ -337,152 +518,283 @@ export default function Book() {
                 ))}
               </div>
               {errors.time && (
-                <p className="mt-1 text-sm text-red-600">{errors.time}</p>
+                <p className="mt-2 text-sm text-red-600">{errors.time}</p>
               )}
             </div>
-          </div>
-          <div className="space-y-6">
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-black">
-                Address *
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={address}
-                  onChange={(e) => {
-                    setAddress(e.target.value);
-                    searchAddress(e.target.value);
-                  }}
-                  onFocus={() => searchSuggestions.length > 0 && setShowSuggestions(true)}
-                  className={`input-premium w-full ${errors.address && 'border-red-500'}`}
-                  placeholder="Type your city, area, or full address..."
-                />
-                {showSuggestions && searchSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-40 overflow-y-auto rounded-lg border border-gray-300 bg-white shadow-lg">
-                    {searchSuggestions.map((suggestion, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => selectAddressFromSearch(suggestion)}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 border-b border-gray-200 last:border-b-0"
-                      >
-                        {suggestion.display_name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {errors.address && (
-                <p className="mt-1 text-sm text-red-600">{errors.address}</p>
-              )}
-              <div className="mt-3 flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={useCurrentLocation}
-                  disabled={locationStatus.includes('Fetching')}
-                  className="rounded-lg bg-gradient-to-r from-gray-800 to-accent px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {locationStatus.includes('Fetching') ? '⏳ Fetching...' : '📍 Use current location (if on mobile)'}
-                </button>
-                <p className="text-xs text-gray-600 italic">💡 On laptop? Search your city/area above or enable location</p>
-                {locationStatus && (
-                  <p className={`text-sm font-medium ${
-                    locationStatus.includes('✓') ? 'text-green-600' :
-                    locationStatus.includes('❌') || locationStatus.includes('⚠️') ? 'text-orange-600' :
-                    'text-blue-600'
-                  }`}>
-                    {locationStatus}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-black">
-                Additional location details (Optional)
-              </label>
-              <input
-                value={manualLocation}
-                onChange={(e) => setManualLocation(e.target.value)}
-                className="input-premium"
-                placeholder="Landmark / Gate code / Floor / Apt number"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-black">
-                Special Instructions
-              </label>
-              <textarea
-                value={specialInstructions}
-                onChange={(e) => setSpecialInstructions(e.target.value)}
-                rows={3}
-                className="input-premium"
-                placeholder="Notes for Partner (e.g., call upon arrival)"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-black">
-                Payment Method
-              </label>
-              <select
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                className="input-premium"
+
+            {/* Navigation */}
+            <div className="flex justify-between pt-4">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="rounded-xl border-2 border-gray-300 px-6 py-3 font-semibold text-gray-700 transition hover:border-gray-400 hover:bg-gray-50"
               >
-                <option value="cash">Cash</option>
-                <option value="online">Online</option>
-              </select>
-            </div>
-            <button
-              type="button"
-              onClick={submitBooking}
-              disabled={loading}
-              className="btn-primary mb-8 w-full"
-            >
-              {loading
-                ? 'Booking...'
-                : serviceId
-                  ? `Confirm Booking (₹${price})`
-                  : 'Select a service'}
-            </button>
-          </div>
-        </div>
-        {relatedServices.length > 0 && (
-          <div className="mt-10 rounded-xl bg-white/95 p-6 shadow-md">
-            <h3 className="mb-4 text-lg font-semibold text-black">You may also like</h3>
-            <div className="grid gap-4 md:grid-cols-3">
-              {relatedServices.map((s) => (
-                <div
-                  key={s.id}
-                  className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-base font-semibold text-black">{s.name}</h4>
-                    <span className="text-sm text-gray-600">₹{s.price}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => selectService(s)}
-                    className="mt-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-800 transition hover:border-gray-900 hover:text-black"
-                  >
-                    Choose this
-                  </button>
-                </div>
-              ))}
+                ← Back
+              </button>
+              <button
+                type="button"
+                onClick={() => canProceedToStep3() && setStep(3)}
+                disabled={!canProceedToStep3()}
+                className="flex items-center gap-2 rounded-xl bg-black px-8 py-3 font-semibold text-white shadow-lg transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Continue
+                <FaChevronRight />
+              </button>
             </div>
           </div>
         )}
 
+        {/* Step 3: Details & Confirmation */}
+        {step === 3 && (
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Left Column: Form */}
+            <div className="space-y-6 lg:col-span-2">
+              {/* Address */}
+              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                <label className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+                  <FaMapMarkerAlt className="text-black" />
+                  Service Address *
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={(e) => {
+                      setAddress(e.target.value);
+                      searchAddress(e.target.value);
+                    }}
+                    onFocus={() =>
+                      searchSuggestions.length > 0 && setShowSuggestions(true)
+                    }
+                    className={`w-full rounded-lg border-2 px-4 py-3 transition focus:outline-none focus:ring-2 focus:ring-black/20 ${
+                      errors.address
+                        ? 'border-red-500'
+                        : 'border-gray-300 focus:border-black'
+                    }`}
+                    placeholder="Type your city, area, or full address..."
+                  />
+                  {showSuggestions && searchSuggestions.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-48 overflow-y-auto rounded-lg border border-gray-300 bg-white shadow-xl">
+                      {searchSuggestions.map((suggestion, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => selectAddressFromSearch(suggestion)}
+                          className="w-full border-b border-gray-100 px-4 py-3 text-left text-sm text-gray-700 transition hover:bg-gray-50 last:border-b-0"
+                        >
+                          {suggestion.display_name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {errors.address && (
+                  <p className="mt-2 text-sm text-red-600">{errors.address}</p>
+                )}
+
+                {/* Location Actions */}
+                <div className="mt-4 space-y-3">
+                  <button
+                    type="button"
+                    onClick={useCurrentLocation}
+                    disabled={locationStatus.includes('Fetching')}
+                    className="w-full rounded-lg bg-gradient-to-r from-gray-800 to-gray-900 px-4 py-3 font-semibold text-white shadow-md transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {locationStatus.includes('Fetching')
+                      ? '⏳ Fetching location...'
+                      : '📍 Use My Current Location'}
+                  </button>
+                  <p className="text-center text-xs text-gray-500">
+                    💡 On desktop? Type your address above or enable location
+                    access
+                  </p>
+                  {locationStatus && (
+                    <p
+                      className={`text-center text-sm font-medium ${
+                        locationStatus.includes('✓')
+                          ? 'text-green-600'
+                          : locationStatus.includes('❌') ||
+                              locationStatus.includes('⚠️')
+                            ? 'text-orange-600'
+                            : 'text-blue-600'
+                      }`}
+                    >
+                      {locationStatus}
+                    </p>
+                  )}
+                </div>
+
+                {/* Additional Location Details */}
+                <div className="mt-4">
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Additional details (Optional)
+                  </label>
+                  <input
+                    value={manualLocation}
+                    onChange={(e) => setManualLocation(e.target.value)}
+                    className="w-full rounded-lg border-2 border-gray-300 px-4 py-2 text-sm transition focus:border-black focus:outline-none focus:ring-2 focus:ring-black/20"
+                    placeholder="Landmark, Gate code, Floor, Apt number..."
+                  />
+                </div>
+              </div>
+
+              {/* Special Instructions */}
+              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                <label className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+                  <FaStickyNote className="text-black" />
+                  Special Instructions (Optional)
+                </label>
+                <textarea
+                  value={specialInstructions}
+                  onChange={(e) => setSpecialInstructions(e.target.value)}
+                  rows={4}
+                  className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 transition focus:border-black focus:outline-none focus:ring-2 focus:ring-black/20"
+                  placeholder="Any special requirements or notes for the service provider..."
+                />
+              </div>
+
+              {/* Payment Method */}
+              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                <label className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+                  <FaMoneyBillWave className="text-black" />
+                  Payment Method
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('cash')}
+                    className={`rounded-lg border-2 px-6 py-4 text-center font-semibold transition ${
+                      paymentMethod === 'cash'
+                        ? 'border-black bg-black text-white'
+                        : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                    }`}
+                  >
+                    💵 Cash
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('online')}
+                    className={`rounded-lg border-2 px-6 py-4 text-center font-semibold transition ${
+                      paymentMethod === 'online'
+                        ? 'border-black bg-black text-white'
+                        : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                    }`}
+                  >
+                    💳 Online
+                  </button>
+                </div>
+              </div>
+
+              {/* Navigation */}
+              <div className="flex justify-between pt-4">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="rounded-xl border-2 border-gray-300 px-6 py-3 font-semibold text-gray-700 transition hover:border-gray-400 hover:bg-gray-50"
+                >
+                  ← Back
+                </button>
+                <button
+                  type="button"
+                  onClick={submitBooking}
+                  disabled={loading}
+                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-green-600 to-green-700 px-8 py-3 font-bold text-white shadow-lg transition hover:from-green-700 hover:to-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading ? (
+                    '⏳ Processing...'
+                  ) : (
+                    <>
+                      <FaCheckCircle />
+                      Confirm Booking (₹{price})
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Right Column: Summary */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-4 rounded-xl border border-gray-200 bg-white p-6 shadow-lg">
+                <h3 className="mb-4 text-xl font-bold text-gray-900">
+                  Booking Summary
+                </h3>
+                <div className="space-y-4 border-t border-gray-200 pt-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Service</p>
+                    <p className="font-semibold text-gray-900">{serviceName}</p>
+                  </div>
+                  {date && (
+                    <div>
+                      <p className="text-sm text-gray-500">Date</p>
+                      <p className="font-semibold text-gray-900">{date}</p>
+                    </div>
+                  )}
+                  {time && (
+                    <div>
+                      <p className="text-sm text-gray-500">Time</p>
+                      <p className="font-semibold text-gray-900">{time}</p>
+                    </div>
+                  )}
+                  {address && (
+                    <div>
+                      <p className="text-sm text-gray-500">Location</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {address.length > 60
+                          ? `${address.slice(0, 60)}...`
+                          : address}
+                      </p>
+                    </div>
+                  )}
+                  <div className="border-t border-gray-200 pt-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-lg font-bold text-gray-900">
+                        Total Amount
+                      </p>
+                      <p className="text-2xl font-bold text-black">₹{price}</p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="mt-6 w-full rounded-lg border border-gray-300 py-2 text-sm font-medium text-gray-600 transition hover:border-gray-400 hover:bg-gray-50"
+                >
+                  Change Service
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Confirmation Modal */}
         {showConfirmation && (
-          <div className="animate-fade-in mt-8 rounded-xl border bg-white p-8 text-center">
-            <FaCheckCircle className="mx-auto mb-4 text-5xl text-green-600" />
-            <h2 className="mb-2 text-2xl font-bold">Booking Confirmed</h2>
-            <p className="text-sm text-gray-600">
-              Redirecting to your bookings...
-            </p>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="animate-fade-in w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl">
+              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+                <FaCheckCircle className="text-5xl text-green-600" />
+              </div>
+              <h2 className="mb-2 text-2xl font-bold text-gray-900">
+                Booking Confirmed!
+              </h2>
+              <p className="mb-4 text-gray-600">
+                Your service has been successfully booked.
+              </p>
+              <p className="text-sm text-gray-500">
+                Redirecting to your bookings...
+              </p>
+            </div>
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+// Wrap with ProtectedRoute
+export default function Book() {
+  return (
+    <ProtectedRoute>
+      <BookPage />
+    </ProtectedRoute>
   );
 }

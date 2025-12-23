@@ -2,19 +2,29 @@
 
 import { sendOTP, verifyOTP } from '@/lib/authService';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { FaArrowLeft, FaShieldHalved } from 'react-icons/fa6';
 
 export default function Login() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState('phone'); // 'phone' or 'otp'
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [generatedOTP, setGeneratedOTP] = useState(''); // For dev testing
+
+  // Check if already logged in and redirect
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      const redirect = searchParams.get('redirect') || '/';
+      router.push(redirect);
+    }
+  }, [router, searchParams]);
 
   // Handle phone number input
   const handlePhoneChange = (e) => {
@@ -79,8 +89,9 @@ export default function Login() {
       const response = await verifyOTP(phoneNumber, otp);
       console.log('Verify Response:', response);
 
-      // Backend sets auth cookie (withCredentials). No need to store token in localStorage.
-      router.push('/');
+      // Redirect to original page or home
+      const redirect = searchParams.get('redirect') || '/';
+      router.push(redirect);
     } catch (err) {
       setError(err.message || 'Invalid OTP. Please try again.');
       setOtp('');

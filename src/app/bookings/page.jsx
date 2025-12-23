@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { fetchUserBookings, cancelBooking } from '@/lib/bookingService';
+import ProtectedRoute from '@/app/_components/ProtectedRoute';
 
-export default function BookingsPage() {
+function BookingsPageContent() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -100,5 +101,14 @@ export default function BookingsPage() {
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
       </div>
     </div>
+  );
+}
+
+// Wrap with ProtectedRoute
+export default function BookingsPage() {
+  return (
+    <ProtectedRoute>
+      <BookingsPageContent />
+    </ProtectedRoute>
   );
 }
