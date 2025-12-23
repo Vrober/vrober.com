@@ -715,23 +715,21 @@ function MobileAppHeader({ location, isLoading }) {
 
   return (
     <div className="sticky top-0 z-40 flex lg:hidden items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 shadow-sm">
-      <div className="flex items-center gap-3 flex-1 min-w-0">
-        <div className="relative h-8 w-24 flex-shrink-0 overflow-hidden">
-          <Image src="/FulllogoBlack .png" alt="Vrober" fill className="object-contain" sizes="100px" />
-        </div>
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-800 min-w-0 flex-1">
-          <FaLocationDot className={`text-xs flex-shrink-0 ${isLoading ? 'animate-pulse' : ''}`} />
-          <span className="truncate">{isLoading ? 'Finding you…' : location || 'Location'}</span>
-        </div>
+      {/* Location */}
+      <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-800 min-w-0 flex-1">
+        <FaLocationDot className={`text-xs flex-shrink-0 text-emerald-600 ${isLoading ? 'animate-pulse' : ''}`} />
+        <span className="truncate">{isLoading ? 'Finding location…' : location || 'Select location'}</span>
       </div>
+
+      {/* Cart Icon */}
       <Link
         href="/cart"
-        className="relative flex-shrink-0 rounded-lg hover:bg-slate-100 p-2 transition-colors"
+        className="relative flex-shrink-0 rounded-lg hover:bg-slate-100 p-2 transition-colors active:bg-slate-200"
       >
         <FaCartShopping className="text-lg text-slate-900" />
         {totalItems > 0 && (
-          <span className="absolute -top-2 -right-2 inline-flex items-center justify-center rounded-full bg-red-500 w-5 h-5 text-white text-xs font-bold">
-            {totalItems}
+          <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-emerald-600 w-5 h-5 text-white text-xs font-bold">
+            {totalItems > 9 ? '9+' : totalItems}
           </span>
         )}
       </Link>
