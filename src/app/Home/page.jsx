@@ -27,7 +27,10 @@ export default function Home() {
   const { getTotalItems } = useCart();
 
   const [categories, setCategories] = useState([]);
-  const [categoryState, setCategoryState] = useState({ loading: true, error: null });
+  const [categoryState, setCategoryState] = useState({
+    loading: true,
+    error: null,
+  });
 
   const [popular, setPopular] = useState([]);
   const [premium, setPremium] = useState([]);
@@ -87,7 +90,10 @@ export default function Home() {
         if (!active) return;
         const services = res.data.services || [];
         setter(services);
-        setSectionState((s) => ({ ...s, [key]: { loading: false, error: null } }));
+        setSectionState((s) => ({
+          ...s,
+          [key]: { loading: false, error: null },
+        }));
       } catch (error) {
         if (!active) return;
         setSectionState((s) => ({
@@ -104,8 +110,12 @@ export default function Home() {
     loadSection('popular', { popular: 'true', limit: 6 }, setPopular);
     loadSection('premium', { premium: 'true', limit: 6 }, setPremium);
     loadSection('trending', { sortBy: 'bookingCount', limit: 6 }, setTrending);
-    loadSection('mostBooked', { sortBy: 'bookingCount', limit: 8 }, setMostBooked);
-    
+    loadSection(
+      'mostBooked',
+      { sortBy: 'bookingCount', limit: 8 },
+      setMostBooked
+    );
+
     // Load all services and filter client-side by patterns
     const loadCategorizedServices = async () => {
       setSectionState((s) => ({
@@ -115,28 +125,83 @@ export default function Home() {
         appliance: { loading: true, error: null },
         homeRepair: { loading: true, error: null },
       }));
-      
+
       try {
         const res = await api.get('/services', { params: { limit: 100 } });
         if (!active) return;
         const allServices = res.data.services || [];
-        
+
         // Filter by keywords in service names
-        const salonKeywords = ['salon', 'beauty', 'makeup', 'facial', 'waxing', 'manicure', 'pedicure', 'haircut', 'hair', 'spa'];
-        const cleaningKeywords = ['cleaning', 'clean', 'housekeeping', 'sanitize', 'deep clean', 'kitchen', 'bathroom'];
-        const applianceKeywords = ['appliance', 'repair', 'ac', 'washing machine', 'refrigerator', 'microwave', 'geyser', 'tv'];
-        const homeRepairKeywords = ['plumbing', 'electrical', 'carpenter', 'painting', 'repair', 'fix', 'install'];
-        
+        const salonKeywords = [
+          'salon',
+          'beauty',
+          'makeup',
+          'facial',
+          'waxing',
+          'manicure',
+          'pedicure',
+          'haircut',
+          'hair',
+          'spa',
+        ];
+        const cleaningKeywords = [
+          'cleaning',
+          'clean',
+          'housekeeping',
+          'sanitize',
+          'deep clean',
+          'kitchen',
+          'bathroom',
+        ];
+        const applianceKeywords = [
+          'appliance',
+          'repair',
+          'ac',
+          'washing machine',
+          'refrigerator',
+          'microwave',
+          'geyser',
+          'tv',
+        ];
+        const homeRepairKeywords = [
+          'plumbing',
+          'electrical',
+          'carpenter',
+          'painting',
+          'repair',
+          'fix',
+          'install',
+        ];
+
         const matchesKeywords = (service, keywords) => {
-          const text = `${service.serviceName} ${service.description || ''} ${service.category || ''}`.toLowerCase();
-          return keywords.some(keyword => text.includes(keyword.toLowerCase()));
+          const text =
+            `${service.serviceName} ${service.description || ''} ${service.category || ''}`.toLowerCase();
+          return keywords.some((keyword) =>
+            text.includes(keyword.toLowerCase())
+          );
         };
-        
-        setSalonServices(allServices.filter(s => matchesKeywords(s, salonKeywords)).slice(0, 6));
-        setCleaningServices(allServices.filter(s => matchesKeywords(s, cleaningKeywords)).slice(0, 6));
-        setApplianceServices(allServices.filter(s => matchesKeywords(s, applianceKeywords)).slice(0, 6));
-        setHomeRepairServices(allServices.filter(s => matchesKeywords(s, homeRepairKeywords)).slice(0, 6));
-        
+
+        setSalonServices(
+          allServices
+            .filter((s) => matchesKeywords(s, salonKeywords))
+            .slice(0, 6)
+        );
+        setCleaningServices(
+          allServices
+            .filter((s) => matchesKeywords(s, cleaningKeywords))
+            .slice(0, 6)
+        );
+        setApplianceServices(
+          allServices
+            .filter((s) => matchesKeywords(s, applianceKeywords))
+            .slice(0, 6)
+        );
+        setHomeRepairServices(
+          allServices
+            .filter((s) => matchesKeywords(s, homeRepairKeywords))
+            .slice(0, 6)
+        );
+
         setSectionState((s) => ({
           ...s,
           salon: { loading: false, error: null },
@@ -155,9 +220,9 @@ export default function Home() {
         }));
       }
     };
-    
+
     loadCategorizedServices();
-    
+
     loadSection('other', { limit: 30 }, (services) => {
       // Exclude already curated flags so this shows variety
       const filtered = services.filter((s) => !s.isPopular && !s.isPremium);
@@ -171,7 +236,10 @@ export default function Home() {
 
   const heroHighlights = useMemo(
     () => [
-      { icon: <FaCircleCheck className="text-sm" />, label: 'Certified professionals' },
+      {
+        icon: <FaCircleCheck className="text-sm" />,
+        label: 'Certified professionals',
+      },
       { icon: <FaCircleCheck className="text-sm" />, label: 'Upfront pricing' },
       { icon: <FaCircleCheck className="text-sm" />, label: 'On-time arrival' },
     ],
@@ -182,7 +250,7 @@ export default function Home() {
   if (initialLoading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
-        <div className="text-center space-y-6 px-4">
+        <div className="space-y-6 px-4 text-center">
           {/* Logo */}
           <div className="flex items-center justify-center">
             <Image
@@ -194,15 +262,15 @@ export default function Home() {
               className="object-contain"
             />
           </div>
-          
+
           {/* Horizontal Progress Bar */}
-          <div className="w-64 mx-auto">
-            <div className="h-1 w-full bg-slate-200 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full animate-progress"></div>
+          <div className="mx-auto w-64">
+            <div className="h-1 w-full overflow-hidden rounded-full bg-slate-200">
+              <div className="animate-progress h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600"></div>
             </div>
           </div>
         </div>
-        
+
         <style jsx>{`
           @keyframes progress {
             0% {
@@ -212,7 +280,7 @@ export default function Home() {
               width: 100%;
             }
           }
-          
+
           .animate-progress {
             animation: progress 1.5s ease-in-out infinite;
           }
@@ -230,10 +298,16 @@ export default function Home() {
         {/* Mobile Hero */}
         <div className="lg:hidden">
           <div className="relative h-48 overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-700 px-4 py-6">
-            <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12), transparent 40%)' }} />
+            <div
+              className="absolute inset-0 opacity-30"
+              style={{
+                backgroundImage:
+                  'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12), transparent 40%)',
+              }}
+            />
             <div className="relative space-y-4">
               <div className="space-y-2">
-                <h1 className="text-2xl font-bold leading-tight text-white">
+                <h1 className="text-2xl leading-tight font-bold text-white">
                   What do you need today?
                 </h1>
                 <p className="text-sm text-emerald-100">
@@ -256,7 +330,10 @@ export default function Home() {
 
         {/* Desktop Header */}
         <header className="relative hidden overflow-hidden rounded-3xl border border-slate-200 bg-white px-10 py-12 shadow-sm lg:block">
-          <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.08),transparent_40%),radial-gradient(circle_at_80%_0%,rgba(15,23,42,0.08),transparent_35%)]" aria-hidden />
+          <div
+            className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.08),transparent_40%),radial-gradient(circle_at_80%_0%,rgba(15,23,42,0.08),transparent_35%)]"
+            aria-hidden
+          />
           <div className="relative grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:items-center">
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white shadow-sm">
@@ -264,11 +341,12 @@ export default function Home() {
                 <span>Home services on-demand</span>
               </div>
               <div className="space-y-4">
-                <h1 className="text-3xl font-bold leading-tight text-slate-900 sm:text-4xl lg:text-5xl">
+                <h1 className="text-3xl leading-tight font-bold text-slate-900 sm:text-4xl lg:text-5xl">
                   Book trusted home services in minutes.
                 </h1>
                 <p className="max-w-2xl text-base text-slate-600 sm:text-lg">
-                  Choose from curated professionals for cleaning, grooming, repairs, and more—scheduled when it works for you.
+                  Choose from curated professionals for cleaning, grooming,
+                  repairs, and more—scheduled when it works for you.
                 </p>
               </div>
 
@@ -314,13 +392,24 @@ export default function Home() {
             </div>
 
             <div className="relative hidden h-full min-h-[320px] w-full rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-700 p-6 shadow-xl lg:block">
-              <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12), transparent 40%), radial-gradient(circle at 80% 0%, rgba(255,255,255,0.1), transparent 35%)' }} />
+              <div
+                className="absolute inset-0 opacity-30"
+                style={{
+                  backgroundImage:
+                    'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12), transparent 40%), radial-gradient(circle at 80% 0%, rgba(255,255,255,0.1), transparent 35%)',
+                }}
+              />
               <div className="relative flex h-full flex-col justify-between">
                 <div className="space-y-4 text-white">
-                  <p className="text-sm uppercase tracking-[0.2em] text-emerald-100">Fast & Reliable</p>
-                  <h2 className="text-2xl font-bold leading-tight">Vetted experts. Transparent pricing. Zero hassle.</h2>
+                  <p className="text-sm tracking-[0.2em] text-emerald-100 uppercase">
+                    Fast & Reliable
+                  </p>
+                  <h2 className="text-2xl leading-tight font-bold">
+                    Vetted experts. Transparent pricing. Zero hassle.
+                  </h2>
                   <p className="text-sm text-emerald-100/90">
-                    Get live updates, chat with professionals, and reschedule anytime from your booking dashboard.
+                    Get live updates, chat with professionals, and reschedule
+                    anytime from your booking dashboard.
                   </p>
                 </div>
                 <div className="grid gap-3 text-sm text-white/90">
@@ -330,7 +419,10 @@ export default function Home() {
                     'Secure digital payments',
                     'Real-time job tracking',
                   ].map((item) => (
-                    <div key={item} className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm">
+                    <div
+                      key={item}
+                      className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm"
+                    >
                       <FaCircleCheck className="text-emerald-300" />
                       <span>{item}</span>
                     </div>
@@ -342,7 +434,7 @@ export default function Home() {
         </header>
 
         {/* Mobile Sections */}
-        <div className="lg:hidden space-y-1 pb-20">
+        <div className="space-y-1  lg:hidden">
           <MobileSectionShell
             title="Categories"
             subtitle="Browse by service type"
@@ -352,15 +444,19 @@ export default function Home() {
             seeAllLink="/category/all"
           >
             <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pb-2">
-              {categoryState.loading ? (
-                CATEGORY_SKELETONS.map((_, idx) => (
-                  <div key={idx} className="h-20 w-20 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"></div>
-                ))
-              ) : (
-                categories.map((category) => (
-                  <MobileCategoryCard key={category._id} category={category} />
-                ))
-              )}
+              {categoryState.loading
+                ? CATEGORY_SKELETONS.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="h-20 w-20 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"
+                    ></div>
+                  ))
+                : categories.map((category) => (
+                    <MobileCategoryCard
+                      key={category._id}
+                      category={category}
+                    />
+                  ))}
             </div>
           </MobileSectionShell>
 
@@ -373,15 +469,20 @@ export default function Home() {
             seeAllLink="/services?filter=popular"
           >
             <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-2">
-              {sectionState.popular.loading ? (
-                SERVICE_SKELETONS.map((_, idx) => (
-                  <div key={idx} className="h-40 w-48 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"></div>
-                ))
-              ) : (
-                popular.map((service) => (
-                  <MobileServiceCard key={service._id} service={service} variant="highlight" />
-                ))
-              )}
+              {sectionState.popular.loading
+                ? SERVICE_SKELETONS.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="h-40 w-48 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"
+                    ></div>
+                  ))
+                : popular.map((service) => (
+                    <MobileServiceCard
+                      key={service._id}
+                      service={service}
+                      variant="highlight"
+                    />
+                  ))}
             </div>
           </MobileSectionShell>
 
@@ -394,15 +495,16 @@ export default function Home() {
             seeAllLink="/services?filter=trending"
           >
             <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-2">
-              {sectionState.trending.loading ? (
-                SERVICE_SKELETONS.map((_, idx) => (
-                  <div key={idx} className="h-40 w-48 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"></div>
-                ))
-              ) : (
-                trending.map((service) => (
-                  <MobileServiceCard key={service._id} service={service} />
-                ))
-              )}
+              {sectionState.trending.loading
+                ? SERVICE_SKELETONS.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="h-40 w-48 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"
+                    ></div>
+                  ))
+                : trending.map((service) => (
+                    <MobileServiceCard key={service._id} service={service} />
+                  ))}
             </div>
           </MobileSectionShell>
 
@@ -415,21 +517,29 @@ export default function Home() {
             seeAllLink="/services?filter=premium"
           >
             <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-2">
-              {sectionState.premium.loading ? (
-                SERVICE_SKELETONS.map((_, idx) => (
-                  <div key={idx} className="h-40 w-48 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"></div>
-                ))
-              ) : (
-                premium.map((service) => (
-                  <MobileServiceCard key={service._id} service={service} variant="premium" />
-                ))
-              )}
+              {sectionState.premium.loading
+                ? SERVICE_SKELETONS.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="h-40 w-48 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"
+                    ></div>
+                  ))
+                : premium.map((service) => (
+                    <MobileServiceCard
+                      key={service._id}
+                      service={service}
+                      variant="premium"
+                    />
+                  ))}
             </div>
           </MobileSectionShell>
 
           {/* Premium Banner Section */}
           <div className="px-4 py-2">
-            <Link href="/book" className="block relative h-44 rounded-2xl overflow-hidden shadow-lg active:scale-[0.98] transition-transform">
+            <Link
+              href="/book"
+              className="relative block h-44 overflow-hidden rounded-2xl shadow-lg transition-transform active:scale-[0.98]"
+            >
               <Image
                 src="/assets/WomenSalon.png"
                 alt="Premium Services"
@@ -449,15 +559,16 @@ export default function Home() {
             seeAllLink="/services?filter=most-booked"
           >
             <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-2">
-              {sectionState.mostBooked.loading ? (
-                SERVICE_SKELETONS.map((_, idx) => (
-                  <div key={idx} className="h-40 w-48 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"></div>
-                ))
-              ) : (
-                mostBooked.map((service) => (
-                  <MobileServiceCard key={service._id} service={service} />
-                ))
-              )}
+              {sectionState.mostBooked.loading
+                ? SERVICE_SKELETONS.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="h-40 w-48 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"
+                    ></div>
+                  ))
+                : mostBooked.map((service) => (
+                    <MobileServiceCard key={service._id} service={service} />
+                  ))}
             </div>
           </MobileSectionShell>
 
@@ -470,15 +581,16 @@ export default function Home() {
             seeAllLink="/category/salon"
           >
             <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-2">
-              {sectionState.salon.loading ? (
-                SERVICE_SKELETONS.map((_, idx) => (
-                  <div key={idx} className="h-40 w-48 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"></div>
-                ))
-              ) : (
-                salonServices.map((service) => (
-                  <MobileServiceCard key={service._id} service={service} />
-                ))
-              )}
+              {sectionState.salon.loading
+                ? SERVICE_SKELETONS.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="h-40 w-48 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"
+                    ></div>
+                  ))
+                : salonServices.map((service) => (
+                    <MobileServiceCard key={service._id} service={service} />
+                  ))}
             </div>
           </MobileSectionShell>
 
@@ -491,15 +603,16 @@ export default function Home() {
             seeAllLink="/category/cleaning"
           >
             <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-2">
-              {sectionState.cleaning.loading ? (
-                SERVICE_SKELETONS.map((_, idx) => (
-                  <div key={idx} className="h-40 w-48 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"></div>
-                ))
-              ) : (
-                cleaningServices.map((service) => (
-                  <MobileServiceCard key={service._id} service={service} />
-                ))
-              )}
+              {sectionState.cleaning.loading
+                ? SERVICE_SKELETONS.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="h-40 w-48 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"
+                    ></div>
+                  ))
+                : cleaningServices.map((service) => (
+                    <MobileServiceCard key={service._id} service={service} />
+                  ))}
             </div>
           </MobileSectionShell>
 
@@ -512,15 +625,16 @@ export default function Home() {
             seeAllLink="/category/appliance"
           >
             <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-2">
-              {sectionState.appliance.loading ? (
-                SERVICE_SKELETONS.map((_, idx) => (
-                  <div key={idx} className="h-40 w-48 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"></div>
-                ))
-              ) : (
-                applianceServices.map((service) => (
-                  <MobileServiceCard key={service._id} service={service} />
-                ))
-              )}
+              {sectionState.appliance.loading
+                ? SERVICE_SKELETONS.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="h-40 w-48 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"
+                    ></div>
+                  ))
+                : applianceServices.map((service) => (
+                    <MobileServiceCard key={service._id} service={service} />
+                  ))}
             </div>
           </MobileSectionShell>
 
@@ -533,21 +647,22 @@ export default function Home() {
             seeAllLink="/category/home-repair"
           >
             <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-2">
-              {sectionState.homeRepair.loading ? (
-                SERVICE_SKELETONS.map((_, idx) => (
-                  <div key={idx} className="h-40 w-48 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"></div>
-                ))
-              ) : (
-                homeRepairServices.map((service) => (
-                  <MobileServiceCard key={service._id} service={service} />
-                ))
-              )}
+              {sectionState.homeRepair.loading
+                ? SERVICE_SKELETONS.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="h-40 w-48 flex-shrink-0 animate-pulse rounded-xl bg-slate-200"
+                    ></div>
+                  ))
+                : homeRepairServices.map((service) => (
+                    <MobileServiceCard key={service._id} service={service} />
+                  ))}
             </div>
           </MobileSectionShell>
         </div>
 
         {/* Desktop Sections */}
-        <section className="hidden mt-10 lg:block">
+        <section className="mt-10 hidden lg:block">
           <SectionShell
             title="Browse by category"
             subtitle="Jump straight to what you need"
@@ -565,7 +680,7 @@ export default function Home() {
           </SectionShell>
         </section>
 
-        <section className="hidden mt-12 space-y-10 lg:block pb-20">
+        <section className="mt-12 hidden space-y-10 pb-20 lg:block">
           <SectionShell
             title="Popular right now"
             subtitle="Most loved by customers"
@@ -579,12 +694,15 @@ export default function Home() {
 
           {/* Premium Banner - Desktop */}
           <div className="relative">
-            <Link href="/book" className="block relative h-64 rounded-3xl overflow-hidden shadow-xl group hover:shadow-2xl transition-all">
+            <Link
+              href="/book"
+              className="group relative block h-64 overflow-hidden rounded-3xl shadow-xl transition-all hover:shadow-2xl"
+            >
               <Image
                 src="/assets/WomenSalon.png"
                 alt="Premium Services"
                 fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
                 priority
               />
             </Link>
@@ -679,24 +797,39 @@ export default function Home() {
           </SectionShell>
         </section>
 
-        <section className="hidden mt-14 rounded-2xl border border-slate-200 bg-slate-900 px-6 py-8 text-white shadow-sm sm:px-10 lg:block">
+        <section className="mt-14 hidden rounded-2xl border border-slate-200 bg-slate-900 px-6 py-8 text-white shadow-sm sm:px-10 lg:block">
           <div className="grid gap-6 lg:grid-cols-[2fr_1fr] lg:items-center">
             <div className="space-y-3">
-              <p className="text-sm uppercase tracking-[0.2em] text-emerald-200">Why Vrober</p>
-              <h3 className="text-2xl font-bold leading-tight sm:text-3xl">Built for effortless bookings.</h3>
+              <p className="text-sm tracking-[0.2em] text-emerald-200 uppercase">
+                Why Vrober
+              </p>
+              <h3 className="text-2xl leading-tight font-bold sm:text-3xl">
+                Built for effortless bookings.
+              </h3>
               <p className="text-sm text-emerald-50/90 sm:text-base">
-                We combine verified experts, transparent pricing, and real-time updates so you always know what to expect.
+                We combine verified experts, transparent pricing, and real-time
+                updates so you always know what to expect.
               </p>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {[{
-                label: 'Avg. response', value: '< 2 mins',
-              }, {
-                label: 'Happy customers', value: '50k+',
-              }, {
-                label: 'Cities served', value: '25+',
-              }].map((stat) => (
-                <div key={stat.label} className="rounded-xl border border-white/10 bg-white/5 p-4 text-center shadow-inner backdrop-blur">
+              {[
+                {
+                  label: 'Avg. response',
+                  value: '< 2 mins',
+                },
+                {
+                  label: 'Happy customers',
+                  value: '50k+',
+                },
+                {
+                  label: 'Cities served',
+                  value: '25+',
+                },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-xl border border-white/10 bg-white/5 p-4 text-center shadow-inner backdrop-blur"
+                >
                   <p className="text-lg font-bold text-white">{stat.value}</p>
                   <p className="text-xs text-emerald-100">{stat.label}</p>
                 </div>
@@ -714,30 +847,46 @@ function MobileAppHeader({ location, isLoading }) {
   const totalItems = getTotalItems();
 
   return (
-    <div className="sticky top-0 z-40 flex lg:hidden items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 shadow-sm">
-      {/* Location */}
-      <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-800 min-w-0 flex-1">
-        <FaLocationDot className={`text-xs flex-shrink-0 text-emerald-600 ${isLoading ? 'animate-pulse' : ''}`} />
-        <span className="truncate">{isLoading ? 'Finding location…' : location || 'Select location'}</span>
-      </div>
+    <div className="sticky top-0 z-40 bg-gradient-to-r from-slate-900 to-slate-800 px-4 py-4 shadow-lg lg:hidden">
+      {/* Header Content */}
+      <div className="flex items-stretch gap-3">
+        {/* Location Selector */}
+        <button className="flex-1 flex items-center gap-2.5 bg-white rounded-lg px-3 py-2.5 text-left transition-all hover:bg-slate-50 active:bg-slate-100 shadow-sm border border-slate-200 h-auto">
+          <FaLocationDot className="flex-shrink-0 text-emerald-600 text-base mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <span className={`block text-sm font-semibold text-slate-900 leading-snug ${isLoading ? 'animate-pulse' : ''}`}>
+              {isLoading ? 'Finding location…' : location || 'Select location'}
+            </span>
+          </div>
+          <span className="text-slate-400 flex-shrink-0 ml-1">⋮⋮</span>
+        </button>
 
-      {/* Cart Icon */}
-      <Link
-        href="/cart"
-        className="relative flex-shrink-0 rounded-lg hover:bg-slate-100 p-2 transition-colors active:bg-slate-200"
-      >
-        <FaCartShopping className="text-lg text-slate-900" />
-        {totalItems > 0 && (
-          <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-emerald-600 w-5 h-5 text-white text-xs font-bold">
-            {totalItems > 9 ? '9+' : totalItems}
-          </span>
-        )}
-      </Link>
+        {/* Cart Icon */}
+        <Link
+          href="/cart"
+          className="relative flex-shrink-0 rounded-lg p-2.5 transition-colors bg-white/10 hover:bg-white/20 active:bg-white/30 h-auto flex items-center"
+        >
+          <FaCartShopping className="text-lg text-white" />
+          {totalItems > 0 && (
+            <span className="absolute -top-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+              {totalItems > 9 ? '9+' : totalItems}
+            </span>
+          )}
+        </Link>
+      </div>
     </div>
   );
 }
 
-function MobileSectionShell({ title, subtitle, icon, children, loading, error, seeAllLink }) {
+function MobileSectionShell({
+  title,
+  subtitle,
+  icon,
+  children,
+  loading,
+  error,
+  seeAllLink,
+}) {
   return (
     <div className="border-t border-slate-100 bg-white py-3">
       <div className="mb-3 px-4">
@@ -747,12 +896,15 @@ function MobileSectionShell({ title, subtitle, icon, children, loading, error, s
             {icon && <span className="text-emerald-600">{icon}</span>}
           </div>
           {seeAllLink && (
-            <Link href={seeAllLink} className="text-sm font-semibold text-emerald-600 hover:text-emerald-700">
+            <Link
+              href={seeAllLink}
+              className="text-sm font-semibold text-emerald-600 hover:text-emerald-700"
+            >
               See all
             </Link>
           )}
         </div>
-        {subtitle && <p className="text-xs text-slate-500 mt-1">{subtitle}</p>}
+        {subtitle && <p className="mt-1 text-xs text-slate-500">{subtitle}</p>}
       </div>
       {loading && <p className="px-4 text-xs text-slate-500">Loading...</p>}
       {error && <p className="px-4 text-xs text-red-600">{error}</p>}
@@ -780,7 +932,7 @@ function MobileCategoryCard({ category }) {
           <span className="text-lg">{category.icon || '🔧'}</span>
         )}
       </div>
-      <p className="text-center text-xs font-semibold text-slate-900 line-clamp-2">
+      <p className="line-clamp-2 text-center text-xs font-semibold text-slate-900">
         {category.displayName || category.name}
       </p>
     </Link>
@@ -789,16 +941,24 @@ function MobileCategoryCard({ category }) {
 
 function MobileServiceCard({ service, variant }) {
   const { addToCart } = useCart();
-  const badge = variant === 'highlight' ? { text: 'Popular', color: 'bg-emerald-500' } : null;
+  const badge =
+    variant === 'highlight'
+      ? { text: 'Popular', color: 'bg-emerald-500' }
+      : null;
 
   return (
     <div className="group relative min-w-[180px] flex-shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all active:scale-95">
       {badge && (
-        <span className={`absolute right-2 top-2 z-10 rounded-full px-2 py-0.5 text-xs font-bold text-white shadow ${badge.color}`}>
+        <span
+          className={`absolute top-2 right-2 z-10 rounded-full px-2 py-0.5 text-xs font-bold text-white shadow ${badge.color}`}
+        >
           {badge.text}
         </span>
       )}
-      <Link href={`/services/${service._id}`} className="block h-32 overflow-hidden bg-slate-100">
+      <Link
+        href={`/services/${service._id}`}
+        className="block h-32 overflow-hidden bg-slate-100"
+      >
         <Image
           src={service.imageUrl || '/assets/placeholder.png'}
           alt={service.serviceName}
@@ -807,14 +967,16 @@ function MobileServiceCard({ service, variant }) {
           className="h-full w-full object-cover transition-transform duration-300"
         />
       </Link>
-      <div className="p-3 space-y-2">
+      <div className="space-y-2 p-3">
         <Link href={`/services/${service._id}`}>
           <h3 className="line-clamp-2 text-sm font-bold text-slate-900">
             {service.serviceName}
           </h3>
         </Link>
         <div className="flex items-center justify-between text-sm">
-          <span className="font-bold text-slate-900">₹{service.price || 0}</span>
+          <span className="font-bold text-slate-900">
+            ₹{service.price || 0}
+          </span>
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
             <FaStar className="text-xs" />
             {service.rating?.toFixed?.(1) || '4.6'}
@@ -847,18 +1009,29 @@ function MobileServiceRow({ service }) {
           />
         </div>
       </Link>
-      <Link href={`/services/${service._id}`} className="flex-1 min-w-0 space-y-1">
-        <h3 className="text-sm font-bold text-slate-900 line-clamp-1">{service.serviceName}</h3>
-        <p className="text-xs text-slate-600 line-clamp-1">{service.description || 'Professional service'}</p>
+      <Link
+        href={`/services/${service._id}`}
+        className="min-w-0 flex-1 space-y-1"
+      >
+        <h3 className="line-clamp-1 text-sm font-bold text-slate-900">
+          {service.serviceName}
+        </h3>
+        <p className="line-clamp-1 text-xs text-slate-600">
+          {service.description || 'Professional service'}
+        </p>
         <div className="mt-1 flex items-center gap-2 text-xs">
-          <span className="font-bold text-slate-900">₹{service.price || 0}</span>
+          <span className="font-bold text-slate-900">
+            ₹{service.price || 0}
+          </span>
           <FaStar className="text-amber-400" />
-          <span className="font-semibold text-slate-700">{service.rating?.toFixed?.(1) || '4.6'}</span>
+          <span className="font-semibold text-slate-700">
+            {service.rating?.toFixed?.(1) || '4.6'}
+          </span>
         </div>
       </Link>
       <button
         onClick={() => addToCart(service)}
-        className="shrink-0 flex items-center justify-center rounded-lg bg-slate-900 px-2 py-2 text-xs font-bold text-white transition-colors hover:bg-slate-800 active:scale-95"
+        className="flex shrink-0 items-center justify-center rounded-lg bg-slate-900 px-2 py-2 text-xs font-bold text-white transition-colors hover:bg-slate-800 active:scale-95"
       >
         <FaCartShopping className="text-sm" />
       </button>
@@ -869,16 +1042,31 @@ function MobileServiceRow({ service }) {
 function LocationPill({ location, isLoading }) {
   return (
     <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-800 shadow-sm">
-      <FaLocationDot className={`text-sm ${isLoading ? 'animate-pulse' : ''}`} />
-      <span className="truncate max-w-[200px]">{isLoading ? 'Fetching your location…' : location || 'Set your location'}</span>
+      <FaLocationDot
+        className={`text-sm ${isLoading ? 'animate-pulse' : ''}`}
+      />
+      <span className="max-w-[200px] truncate">
+        {isLoading
+          ? 'Fetching your location…'
+          : location || 'Set your location'}
+      </span>
     </div>
   );
 }
 
-function SectionShell({ title, subtitle, icon, children, loading, error, skeletonCount = 6, layout = 'services' }) {
+function SectionShell({
+  title,
+  subtitle,
+  icon,
+  children,
+  loading,
+  error,
+  skeletonCount = 6,
+  layout = 'services',
+}) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-      <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
             {icon}
@@ -897,16 +1085,37 @@ function SectionShell({ title, subtitle, icon, children, loading, error, skeleto
       </div>
 
       <p className="mb-4 text-xs font-medium text-slate-500 sm:hidden">
-        Swipe sideways to explore more {layout === 'categories' ? 'categories' : 'services'}.
+        Swipe sideways to explore more{' '}
+        {layout === 'categories' ? 'categories' : 'services'}.
       </p>
 
       {loading && (
-        <div className={layout === 'categories' ? 'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6' : 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'}>
-          {(layout === 'categories' ? CATEGORY_SKELETONS : SERVICE_SKELETONS).map((_, idx) => (
-            <div key={idx} className="animate-pulse rounded-xl border border-slate-100 bg-slate-50 p-4 shadow-inner">
-              <div className={layout === 'categories' ? 'h-12 w-12 rounded-lg bg-slate-200' : 'h-40 w-full rounded-lg bg-slate-200'}></div>
+        <div
+          className={
+            layout === 'categories'
+              ? 'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'
+              : 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'
+          }
+        >
+          {(layout === 'categories'
+            ? CATEGORY_SKELETONS
+            : SERVICE_SKELETONS
+          ).map((_, idx) => (
+            <div
+              key={idx}
+              className="animate-pulse rounded-xl border border-slate-100 bg-slate-50 p-4 shadow-inner"
+            >
+              <div
+                className={
+                  layout === 'categories'
+                    ? 'h-12 w-12 rounded-lg bg-slate-200'
+                    : 'h-40 w-full rounded-lg bg-slate-200'
+                }
+              ></div>
               <div className="mt-3 h-3 w-2/3 rounded bg-slate-200"></div>
-              {layout !== 'categories' && <div className="mt-2 h-3 w-1/2 rounded bg-slate-100"></div>}
+              {layout !== 'categories' && (
+                <div className="mt-2 h-3 w-1/2 rounded bg-slate-100"></div>
+              )}
             </div>
           ))}
         </div>
@@ -925,7 +1134,9 @@ function SectionShell({ title, subtitle, icon, children, loading, error, skeleto
 
 function ServiceGrid({ services, variant = 'default' }) {
   if (!services?.length) {
-    return <p className="text-sm text-slate-500">No services found right now.</p>;
+    return (
+      <p className="text-sm text-slate-500">No services found right now.</p>
+    );
   }
 
   return (
@@ -947,11 +1158,16 @@ function ServiceCard({ service, variant }) {
   return (
     <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
       {badge && (
-        <span className={`absolute right-3 top-3 z-10 rounded-full px-3 py-1 text-xs font-bold shadow ${badge.color}`}>
+        <span
+          className={`absolute top-3 right-3 z-10 rounded-full px-3 py-1 text-xs font-bold shadow ${badge.color}`}
+        >
           {badge.text}
         </span>
       )}
-      <Link href={`/services/${service._id}`} className="block h-44 overflow-hidden bg-slate-100">
+      <Link
+        href={`/services/${service._id}`}
+        className="block h-44 overflow-hidden bg-slate-100"
+      >
         <Image
           src={service.imageUrl || '/assets/placeholder.png'}
           alt={service.serviceName}
@@ -975,11 +1191,17 @@ function ServiceCard({ service, variant }) {
         <div className="flex items-center justify-between text-sm text-slate-700">
           <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-2 py-1 font-semibold text-slate-800">
             <FaStar className="text-amber-400" />
-            <span>{service.rating?.toFixed?.(1) || service.rating || '4.6'}</span>
+            <span>
+              {service.rating?.toFixed?.(1) || service.rating || '4.6'}
+            </span>
           </div>
           <div className="text-right">
-            <p className="text-xl font-bold text-slate-900">₹{service.price || 0}</p>
-            <p className="text-xs text-slate-500">{service.duration || 'Flexible slots'}</p>
+            <p className="text-xl font-bold text-slate-900">
+              ₹{service.price || 0}
+            </p>
+            <p className="text-xs text-slate-500">
+              {service.duration || 'Flexible slots'}
+            </p>
           </div>
         </div>
 
@@ -1023,9 +1245,13 @@ function CategoryCard({ category }) {
         )}
       </div>
       <div className="space-y-1">
-        <p className="text-sm font-semibold text-slate-900">{category.displayName || category.name}</p>
+        <p className="text-sm font-semibold text-slate-900">
+          {category.displayName || category.name}
+        </p>
         {category.description && (
-          <p className="text-xs text-slate-500 line-clamp-1">{category.description}</p>
+          <p className="line-clamp-1 text-xs text-slate-500">
+            {category.description}
+          </p>
         )}
       </div>
     </Link>

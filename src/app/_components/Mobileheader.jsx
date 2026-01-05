@@ -18,7 +18,9 @@ export default function Mobileheader() {
         />
       </div>
       <div className="flex items-center gap-1 text-black">
-        <FaLocationDot className={`text-2xl text-black ${isLoading ? 'animate-pulse' : ''}`} />
+        <FaLocationDot
+          className={`text-2xl text-black ${isLoading ? 'animate-pulse' : ''}`}
+        />
         <span className="text-sm font-medium">{location}</span>
       </div>
     </div>

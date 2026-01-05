@@ -32,15 +32,15 @@ export default function useUserLocation() {
       try {
         const coords = cachedCoords ? JSON.parse(cachedCoords) : null;
         const [city, state] = cachedLocation.split(', ');
+        // Show cached immediately, but DO NOT return; we'll refresh below
         setLocation({
           text: cachedLocation,
           city: city || '',
           state: state || '',
           coords,
-          isLoading: false,
+          isLoading: true,
           error: null,
         });
-        return; // Use cached location
       } catch (e) {
         console.warn('Failed to parse cached location:', e);
       }
@@ -66,12 +66,11 @@ export default function useUserLocation() {
 
             const data = await response.json();
             const locationText = data.location || 'Unknown';
-            const [city, state] = locationText.split(', ');
 
             setLocation({
               text: locationText,
-              city: city || 'Unknown',
-              state: state || '',
+              city: data.city || 'Unknown',
+              state: data.state || '',
               coords,
               isLoading: false,
               error: null,

@@ -142,7 +142,7 @@ export default function RecentBookings() {
                       </h3>
                       <p className="text-sm text-gray-600">
                         {b.vendorId?.name || 'Partner'}
-                      </h3>
+                      </p>
                     </div>
                     <span
                       className={`px-3 py-1 ${styles.bg} ${styles.text} rounded-full text-sm font-medium`}

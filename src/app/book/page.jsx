@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { fetchServices, createBooking } from '@/lib/bookingService';
 import Image from 'next/image';
 import {
@@ -14,13 +15,17 @@ import {
   FaChevronRight,
 } from 'react-icons/fa';
 import ProtectedRoute from '@/app/_components/ProtectedRoute';
+import { useCart } from '@/lib/cartContext';
 
 function BookPage() {
+  const router = useRouter();
+  const { cart, clearCart, isLoading: cartLoading } = useCart();
   const [services, setServices] = useState([]);
   const [serviceId, setServiceId] = useState('');
   const [vendorId, setVendorId] = useState('');
   const [serviceName, setServiceName] = useState('');
   const [price, setPrice] = useState(0);
+  const [isCartCheckout, setIsCartCheckout] = useState(false);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [address, setAddress] = useState('');
@@ -78,6 +83,25 @@ function BookPage() {
     load();
   }, []);
 
+  useEffect(() => {
+    if (cartLoading) return;
+    if (cart.length > 0) {
+      const itemCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+      const totalPrice = cart.reduce(
+        (sum, item) => sum + Number(item.price || 0) * (item.quantity || 1),
+        0
+      );
+      setIsCartCheckout(true);
+      setServiceId('cart-mode');
+      setServiceName(`Cart services (${itemCount} item${itemCount > 1 ? 's' : ''})`);
+      setPrice(totalPrice);
+      setErrors((e) => ({ ...e, serviceId: '' }));
+      setStep(2);
+    } else {
+      setIsCartCheckout(false);
+    }
+  }, [cart, cartLoading]);
+
   const availableTimeSlots = [
     '09:00 AM',
     '10:00 AM',
@@ -109,18 +133,18 @@ function BookPage() {
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
       );
       const data = await response.json();
-      
+
       if (data) {
         // Method 1: Use the display_name which has the full address string
         if (data.display_name) {
           return data.display_name;
         }
-        
+
         // Method 2: Build from address components if display_name not available
         if (data.address) {
           const addr = data.address;
           const addressParts = [];
-          
+
           // Add all available address components in order
           if (addr.house_number) addressParts.push(addr.house_number);
           if (addr.road) addressParts.push(addr.road);
@@ -135,11 +159,13 @@ function BookPage() {
           if (addr.state) addressParts.push(addr.state);
           if (addr.postcode) addressParts.push(addr.postcode);
           if (addr.country) addressParts.push(addr.country);
-          
+
           const fullAddress = addressParts.join(', ');
-          return fullAddress || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+          return (
+            fullAddress || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+          );
         }
-        
+
         return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
       }
       return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
@@ -154,19 +180,21 @@ function BookPage() {
       setSearchSuggestions([]);
       return;
     }
-    
+
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`
       );
       const data = await response.json();
-      
+
       if (Array.isArray(data)) {
-        setSearchSuggestions(data.map(item => ({
-          display_name: item.display_name,
-          lat: parseFloat(item.lat),
-          lon: parseFloat(item.lon)
-        })));
+        setSearchSuggestions(
+          data.map((item) => ({
+            display_name: item.display_name,
+            lat: parseFloat(item.lat),
+            lon: parseFloat(item.lon),
+          }))
+        );
         setShowSuggestions(true);
       }
     } catch (error) {
@@ -196,19 +224,23 @@ function BookPage() {
         const { latitude, longitude } = pos.coords;
         setLat(latitude.toFixed(6));
         setLng(longitude.toFixed(6));
-        
+
         // Get detailed address from coordinates
         setLocationStatus('🔍 Getting address details...');
-        const fullAddress = await getAddressFromCoordinates(latitude, longitude);
+        const fullAddress = await getAddressFromCoordinates(
+          latitude,
+          longitude
+        );
         setAddress(fullAddress);
-        
+
         setLocationStatus('✓ Location found!');
         setTimeout(() => setLocationStatus(''), 3000); // Clear after 3s
       },
       (err) => {
         let msg = 'Unable to access location';
         if (err.code === 1) {
-          msg = '⚠️ Location permission denied. Please enable in browser settings.';
+          msg =
+            '⚠️ Location permission denied. Please enable in browser settings.';
         } else if (err.code === 2) {
           msg = '⚠️ Location unavailable. Check your network & GPS.';
         } else if (err.code === 3) {
@@ -228,7 +260,7 @@ function BookPage() {
   const submitBooking = async () => {
     // Validation
     const newErrors = {};
-    if (!serviceId) newErrors.serviceId = 'Select a service';
+    if (!isCartCheckout && !serviceId) newErrors.serviceId = 'Select a service';
     if (!date) newErrors.date = 'Pick a date';
     if (!time) newErrors.time = 'Pick a time';
     if (!address) newErrors.address = 'Enter address';
@@ -237,27 +269,49 @@ function BookPage() {
 
     setLoading(true);
     try {
-      const payload = {
-        serviceId,
-        vendorId: vendorId || undefined, // Optional - will be assigned by admin
-        serviceDate: date,
-        serviceTime: time,
-        address,
-        location: {
-          lat: lat ? Number(lat) : undefined,
-          lng: lng ? Number(lng) : undefined,
-          manual: manualLocation || undefined,
-        },
-        price,
-        description: serviceName,
-        specialInstructions,
-        paymentMethod,
+      const baseLocation = {
+        lat: lat ? Number(lat) : undefined,
+        lng: lng ? Number(lng) : undefined,
+        manual: manualLocation || undefined,
       };
 
-      // Log the payload for debugging
-      console.log('Booking payload:', payload);
+      if (isCartCheckout) {
+        const bookingRequests = cart.map((item) =>
+          createBooking({
+            serviceId: item._id,
+            vendorId: item.vendorId || undefined,
+            serviceDate: date,
+            serviceTime: time,
+            address,
+            location: baseLocation,
+            price: Number(item.price || 0) * (item.quantity || 1),
+            description: `${item.serviceName || item.name} (Qty: ${item.quantity || 1})`,
+            specialInstructions,
+            paymentMethod,
+          })
+        );
 
-      await createBooking(payload);
+        await Promise.all(bookingRequests);
+        clearCart();
+      } else {
+        const payload = {
+          serviceId,
+          vendorId: vendorId || undefined, // Optional - will be assigned by admin
+          serviceDate: date,
+          serviceTime: time,
+          address,
+          location: baseLocation,
+          price,
+          description: serviceName,
+          specialInstructions,
+          paymentMethod,
+        };
+
+        // Log the payload for debugging
+        console.log('Booking payload:', payload);
+
+        await createBooking(payload);
+      }
       setShowConfirmation(true);
       setTimeout(() => {
         window.location.href = '/bookings';
@@ -282,7 +336,7 @@ function BookPage() {
     return d.toISOString().split('T')[0];
   };
 
-  const canProceedToStep2 = () => serviceId && serviceName;
+  const canProceedToStep2 = () => isCartCheckout || (serviceId && serviceName);
   const canProceedToStep3 = () => canProceedToStep2() && date && time;
 
   return (
@@ -290,7 +344,9 @@ function BookPage() {
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="mx-auto max-w-6xl px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">Book Your Service</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Book Your Service
+          </h1>
           <p className="mt-2 text-gray-600">
             Professional services at your doorstep
           </p>
@@ -357,13 +413,13 @@ function BookPage() {
           <div className="space-y-6">
             {/* Search Bar */}
             <div className="relative">
-              <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <FaSearch className="absolute top-1/2 left-4 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 value={serviceSearch}
                 onChange={(e) => setServiceSearch(e.target.value)}
                 placeholder="Search for a service..."
-                className="w-full rounded-xl border border-gray-200 py-3 pl-12 pr-4 shadow-sm transition focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10"
+                className="w-full rounded-xl border border-gray-200 py-3 pr-4 pl-12 shadow-sm transition focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none"
               />
             </div>
 
@@ -453,23 +509,63 @@ function BookPage() {
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Selected Service</p>
+                  <p className="text-sm text-gray-500">
+                    {isCartCheckout ? 'Selected Services' : 'Selected Service'}
+                  </p>
                   <h3 className="text-xl font-bold text-gray-900">
-                    {serviceName}
+                    {isCartCheckout
+                      ? `Cart services (${cart.length} item${cart.length > 1 ? 's' : ''})`
+                      : serviceName}
                   </h3>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-500">Price</p>
-                  <p className="text-2xl font-bold text-black">₹{price}</p>
+                  <p className="text-sm text-gray-500">
+                    {isCartCheckout ? 'Total' : 'Price'}
+                  </p>
+                  <p className="text-2xl font-bold text-black">
+                    ₹{Number(price || 0).toFixed(2)}
+                  </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="mt-4 text-sm font-medium text-gray-600 hover:text-black"
-              >
-                ← Change Service
-              </button>
+              {isCartCheckout ? (
+                <>
+                  <div className="mt-4 space-y-3">
+                    {cart.map((item) => (
+                      <div
+                        key={item._id}
+                        className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {item.serviceName || item.name}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            Qty: {item.quantity || 1} · ₹{item.price}
+                          </p>
+                        </div>
+                        <span className="text-sm font-bold text-gray-900">
+                          ₹{(Number(item.price || 0) * (item.quantity || 1)).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => router.push('/cart')}
+                    className="mt-4 text-sm font-medium text-gray-600 hover:text-black"
+                  >
+                    ← Edit cart
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="mt-4 text-sm font-medium text-gray-600 hover:text-black"
+                >
+                  ← Change Service
+                </button>
+              )}
             </div>
 
             {/* Date Selection */}
@@ -484,7 +580,7 @@ function BookPage() {
                 min={getMinDate()}
                 max={getMaxDate()}
                 onChange={(e) => setDate(e.target.value)}
-                className={`w-full rounded-lg border-2 px-4 py-3 text-lg transition focus:outline-none focus:ring-2 focus:ring-black/20 ${
+                className={`w-full rounded-lg border-2 px-4 py-3 text-lg transition focus:ring-2 focus:ring-black/20 focus:outline-none ${
                   errors.date
                     ? 'border-red-500'
                     : 'border-gray-300 focus:border-black'
@@ -566,7 +662,7 @@ function BookPage() {
                     onFocus={() =>
                       searchSuggestions.length > 0 && setShowSuggestions(true)
                     }
-                    className={`w-full rounded-lg border-2 px-4 py-3 transition focus:outline-none focus:ring-2 focus:ring-black/20 ${
+                    className={`w-full rounded-lg border-2 px-4 py-3 transition focus:ring-2 focus:ring-black/20 focus:outline-none ${
                       errors.address
                         ? 'border-red-500'
                         : 'border-gray-300 focus:border-black'
@@ -574,13 +670,13 @@ function BookPage() {
                     placeholder="Type your city, area, or full address..."
                   />
                   {showSuggestions && searchSuggestions.length > 0 && (
-                    <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-48 overflow-y-auto rounded-lg border border-gray-300 bg-white shadow-xl">
+                    <div className="absolute top-full right-0 left-0 z-50 mt-2 max-h-48 overflow-y-auto rounded-lg border border-gray-300 bg-white shadow-xl">
                       {searchSuggestions.map((suggestion, idx) => (
                         <button
                           key={idx}
                           type="button"
                           onClick={() => selectAddressFromSearch(suggestion)}
-                          className="w-full border-b border-gray-100 px-4 py-3 text-left text-sm text-gray-700 transition hover:bg-gray-50 last:border-b-0"
+                          className="w-full border-b border-gray-100 px-4 py-3 text-left text-sm text-gray-700 transition last:border-b-0 hover:bg-gray-50"
                         >
                           {suggestion.display_name}
                         </button>
@@ -632,7 +728,7 @@ function BookPage() {
                   <input
                     value={manualLocation}
                     onChange={(e) => setManualLocation(e.target.value)}
-                    className="w-full rounded-lg border-2 border-gray-300 px-4 py-2 text-sm transition focus:border-black focus:outline-none focus:ring-2 focus:ring-black/20"
+                    className="w-full rounded-lg border-2 border-gray-300 px-4 py-2 text-sm transition focus:border-black focus:ring-2 focus:ring-black/20 focus:outline-none"
                     placeholder="Landmark, Gate code, Floor, Apt number..."
                   />
                 </div>
@@ -648,7 +744,7 @@ function BookPage() {
                   value={specialInstructions}
                   onChange={(e) => setSpecialInstructions(e.target.value)}
                   rows={4}
-                  className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 transition focus:border-black focus:outline-none focus:ring-2 focus:ring-black/20"
+                  className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 transition focus:border-black focus:ring-2 focus:ring-black/20 focus:outline-none"
                   placeholder="Any special requirements or notes for the service provider..."
                 />
               </div>
@@ -705,7 +801,7 @@ function BookPage() {
                   ) : (
                     <>
                       <FaCheckCircle />
-                      Confirm Booking (₹{price})
+                      Confirm Booking (₹{Number(price || 0).toFixed(2)})
                     </>
                   )}
                 </button>
@@ -719,10 +815,36 @@ function BookPage() {
                   Booking Summary
                 </h3>
                 <div className="space-y-4 border-t border-gray-200 pt-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Service</p>
-                    <p className="font-semibold text-gray-900">{serviceName}</p>
-                  </div>
+                  {isCartCheckout ? (
+                    <div>
+                      <p className="text-sm text-gray-500">Services</p>
+                      <div className="mt-2 space-y-3">
+                        {cart.map((item) => (
+                          <div
+                            key={item._id}
+                            className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3"
+                          >
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">
+                                {item.serviceName || item.name}
+                              </p>
+                              <p className="text-xs text-gray-600">
+                                Qty: {item.quantity || 1} · ₹{item.price}
+                              </p>
+                            </div>
+                            <span className="text-sm font-bold text-gray-900">
+                              ₹{(Number(item.price || 0) * (item.quantity || 1)).toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-sm text-gray-500">Service</p>
+                      <p className="font-semibold text-gray-900">{serviceName}</p>
+                    </div>
+                  )}
                   {date && (
                     <div>
                       <p className="text-sm text-gray-500">Date</p>
@@ -750,16 +872,18 @@ function BookPage() {
                       <p className="text-lg font-bold text-gray-900">
                         Total Amount
                       </p>
-                      <p className="text-2xl font-bold text-black">₹{price}</p>
+                      <p className="text-2xl font-bold text-black">
+                        ₹{Number(price || 0).toFixed(2)}
+                      </p>
                     </div>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setStep(1)}
+                  onClick={() => (isCartCheckout ? router.push('/cart') : setStep(1))}
                   className="mt-6 w-full rounded-lg border border-gray-300 py-2 text-sm font-medium text-gray-600 transition hover:border-gray-400 hover:bg-gray-50"
                 >
-                  Change Service
+                  {isCartCheckout ? 'Edit cart' : 'Change Service'}
                 </button>
               </div>
             </div>

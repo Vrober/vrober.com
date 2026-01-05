@@ -51,7 +51,9 @@ function CartPageContent() {
 
   const handleCheckout = () => {
     if (cart.length > 0) {
-      router.push('/book');
+      // Store cart details in session/localStorage for checkout
+      localStorage.setItem('checkoutCart', JSON.stringify(cart));
+      router.push('/checkout');
     }
   };
 
@@ -156,59 +158,62 @@ function CartItem({ item, onQuantityChange, onRemove }) {
   return (
     <div className="flex gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-all hover:shadow lg:p-4">
       {/* Image */}
-      <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100 lg:h-24 lg:w-24">
-        <Image
-          src={item.image || '/placeholder.png'}
-          alt={item.serviceName || item.name}
-          fill
-          className="object-cover"
-        />
-      </div>
+      <Link href={`/services/${item._id}`} className="shrink-0">
+        <div className="h-20 w-20 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 lg:h-24 lg:w-24">
+          <Image
+            src={item.imageUrl || '/assets/placeholder.png'}
+            alt={item.serviceName}
+            width={100}
+            height={100}
+            className="h-full w-full object-cover"
+          />
+        </div>
+      </Link>
 
       {/* Details */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <h3 className="mb-1 line-clamp-2 text-sm font-bold text-slate-900 lg:text-base">
-          {item.serviceName || item.name}
-        </h3>
-        <p className="mb-2 text-xs text-slate-600 lg:text-sm">
-          ₹{item.price} per service
+      <div className="min-w-0 flex-1 space-y-2">
+        <Link href={`/services/${item._id}`}>
+          <h3 className="line-clamp-2 font-bold text-slate-900 transition-colors hover:text-emerald-700">
+            {item.serviceName}
+          </h3>
+        </Link>
+        <p className="line-clamp-1 text-xs text-slate-600 lg:text-sm">
+          {item.description || 'Professional service'}
         </p>
-
-        <div className="mt-auto flex items-center justify-between">
-          {/* Quantity Controls */}
-          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white">
+        <div className="flex items-center justify-between">
+          <span className="text-lg font-bold text-slate-900">
+            ₹{item.price || 0}
+          </span>
+          <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-1">
             <button
-              onClick={() => onQuantityChange(Math.max(1, item.quantity - 1))}
-              className="flex h-8 w-8 items-center justify-center text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
-              disabled={item.quantity <= 1}
+              onClick={() => onQuantityChange(item.quantity - 1)}
+              className="flex items-center justify-center rounded px-2 py-1 transition-colors hover:bg-slate-200"
+              aria-label="Decrease quantity"
             >
-              <FaMinus className="text-xs" />
+              <FaMinus className="text-xs text-slate-700" />
             </button>
-            <span className="min-w-[2rem] text-center text-sm font-semibold text-slate-900">
+            <span className="w-6 text-center text-sm font-bold text-slate-900">
               {item.quantity}
             </span>
             <button
               onClick={() => onQuantityChange(item.quantity + 1)}
-              className="flex h-8 w-8 items-center justify-center text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+              className="flex items-center justify-center rounded px-2 py-1 transition-colors hover:bg-slate-200"
+              aria-label="Increase quantity"
             >
-              <FaPlus className="text-xs" />
-            </button>
-          </div>
-
-          {/* Price & Remove */}
-          <div className="flex items-center gap-3">
-            <span className="text-base font-bold text-slate-900 lg:text-lg">
-              ₹{(item.price * item.quantity).toFixed(2)}
-            </span>
-            <button
-              onClick={onRemove}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50"
-            >
-              <FaTrash className="text-xs" />
+              <FaPlus className="text-xs text-slate-700" />
             </button>
           </div>
         </div>
       </div>
+
+      {/* Remove Button */}
+      <button
+        onClick={onRemove}
+        className="flex shrink-0 items-center justify-center rounded-lg p-2 text-red-600 transition-colors hover:bg-red-50"
+        aria-label="Remove from cart"
+      >
+        <FaTrash className="text-sm" />
+      </button>
     </div>
   );
 }
