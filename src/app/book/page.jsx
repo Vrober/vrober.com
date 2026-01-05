@@ -786,7 +786,7 @@ function BookPage() {
                       : '📍 Use My Current Location'}
                   </button>
                   <p className="text-center text-xs text-gray-500">
-                    💡 On desktop? Type your address above or enable location
+                    Type your address above or enable location
                     access
                   </p>
                   {locationStatus && (
