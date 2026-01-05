@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
+import Script from 'next/script';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
@@ -12,6 +12,8 @@ import {
   FaUser,
   FaCalendar,
   FaClock,
+  FaCreditCard,
+  FaMoneyBill,
 } from 'react-icons/fa6';
 import ProtectedRoute from '@/app/_components/ProtectedRoute';
 import { useCart } from '@/lib/cartContext';
@@ -22,6 +24,7 @@ function CheckoutPageContent() {
   const { cart, getTotalPrice, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' or 'online'
 
   // Form state
   const [formData, setFormData] = useState({
@@ -46,7 +49,7 @@ function CheckoutPageContent() {
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('accessToken');
         if (!token) return;
 
         const response = await api.get('/auth/me');
@@ -71,6 +74,93 @@ function CheckoutPageContent() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const createCashBooking = async () => {
+    // Create booking for each service in cart
+    const bookingPromises = cart.map((item) =>
+      api.post('/bookings', {
+        serviceId: item._id,
+        serviceDate: formData.date,
+        serviceTime: formData.time,
+        address: formData.address,
+        location: formData.city
+          ? `${formData.city}${formData.pincode ? ', ' + formData.pincode : ''}`
+          : undefined,
+        price: item.price * (item.quantity || 1),
+        description: `${item.serviceName || item.name} (Qty: ${item.quantity || 1})`,
+        specialInstructions: formData.notes || undefined,
+        paymentMethod: 'cash',
+      })
+    );
+
+    await Promise.all(bookingPromises);
+
+    // Clear cart on success
+    clearCart();
+    localStorage.removeItem('checkoutCart');
+
+    // Redirect to bookings page
+    router.push('/bookings?success=true');
+  };
+
+  const createOnlinePayment = async () => {
+    // Step 1: Create bookings first
+    const bookingPromises = cart.map((item) =>
+      api.post('/bookings', {
+        serviceId: item._id,
+        serviceDate: formData.date,
+        serviceTime: formData.time,
+        address: formData.address,
+        location: formData.city
+          ? `${formData.city}${formData.pincode ? ', ' + formData.pincode : ''}`
+          : undefined,
+        price: item.price * (item.quantity || 1),
+        description: `${item.serviceName || item.name} (Qty: ${item.quantity || 1})`,
+        specialInstructions: formData.notes || undefined,
+        paymentMethod: 'online',
+      })
+    );
+
+    const bookingResults = await Promise.all(bookingPromises);
+    const bookingIds = bookingResults.map((result) => result.data.booking._id);
+
+    // Step 2: Create payment order (don't pass returnUrl - backend will set it with order_id)
+    const paymentResponse = await api.post('/payments/create-order', {
+      bookingIds: bookingIds,
+    });
+
+    const { orderId, paymentSessionId } = paymentResponse.data.data;
+
+    if (!paymentSessionId) {
+      throw new Error('Failed to create payment session');
+    }
+
+    // Step 3: Initialize Cashfree checkout
+    if (typeof window.Cashfree === 'undefined') {
+      throw new Error('Cashfree SDK not loaded. Please refresh the page.');
+    }
+
+    const cashfree = window.Cashfree({
+      mode: process.env.NEXT_PUBLIC_CASHFREE_ENV || 'production',
+    });
+
+    // Note: Don't pass returnUrl here - Cashfree will use the one from order_meta
+    const checkoutOptions = {
+      paymentSessionId: paymentSessionId,
+      redirectTarget: '_self',
+    };
+
+    cashfree.checkout(checkoutOptions).then((result) => {
+      if (result.error) {
+        console.error('Cashfree checkout error:', result.error);
+        setError(result.error.message || 'Payment initialization failed');
+        setLoading(false);
+      }
+      if (result.redirect) {
+        console.log('Payment redirect initiated');
+      }
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -99,36 +189,18 @@ function CheckoutPageContent() {
         return;
       }
 
-      // Create booking for each service in cart
-      const bookingPromises = cart.map((item) =>
-        api.post('/bookings', {
-          serviceId: item._id,
-          serviceDate: formData.date,
-          serviceTime: formData.time,
-          address: formData.address,
-          location: formData.city ? `${formData.city}${formData.pincode ? ', ' + formData.pincode : ''}` : undefined,
-          price: item.price * (item.quantity || 1),
-          description: `${item.serviceName || item.name} (Qty: ${item.quantity || 1})`,
-          specialInstructions: formData.notes || undefined,
-          paymentMethod: 'cash',
-        })
-      );
-
-      await Promise.all(bookingPromises);
-
-      // Clear cart on success
-      clearCart();
-      localStorage.removeItem('checkoutCart');
-
-      // Redirect to bookings page
-      router.push('/bookings?success=true');
+      if (paymentMethod === 'cash') {
+        await createCashBooking();
+      } else {
+        await createOnlinePayment();
+      }
     } catch (err) {
       console.error('Checkout error:', err);
       setError(
         err.response?.data?.message ||
+          err.message ||
           'Failed to create booking. Please try again.'
       );
-    } finally {
       setLoading(false);
     }
   };
@@ -137,7 +209,7 @@ function CheckoutPageContent() {
     return null; // Will redirect in useEffect
   }
 
-  const bookingFee = 20;
+  const bookingFee = 0;
   const subtotal = getTotalPrice();
   const total = subtotal + bookingFee;
 
@@ -145,45 +217,57 @@ function CheckoutPageContent() {
   const today = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Mobile Header */}
-      <div className="sticky top-0 z-10 border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            className="-ml-2 rounded-lg p-2 transition-colors hover:bg-slate-100"
-          >
-            <FaArrowLeft className="text-slate-900" />
-          </button>
-          <h1 className="text-lg font-bold text-slate-900">Checkout</h1>
+    <>
+      {/* Load Cashfree SDK */}
+      <Script
+        src="https://sdk.cashfree.com/js/v3/cashfree.js"
+        strategy="lazyOnload"
+        onError={() => console.error('Failed to load Cashfree SDK')}
+      />
+
+      <div className="min-h-screen bg-slate-50">
+        {/* Mobile Header */}
+        <div className="sticky top-0 z-10 border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="-ml-2 rounded-lg p-2 transition-colors hover:bg-slate-100"
+            >
+              <FaArrowLeft className="text-slate-900" />
+            </button>
+            <h1 className="text-lg font-bold text-slate-900">Checkout</h1>
+          </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="mx-auto max-w-6xl px-4 py-6 lg:py-8">
-        <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[1fr_400px]">
-          {/* Left Column - Form */}
-          <div className="space-y-6">
-            {/* Desktop Back Button */}
-            <div className="hidden lg:block">
-              <button
-                onClick={() => router.back()}
-                className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
-              >
-                <FaArrowLeft className="text-xs" />
-                Back to cart
-              </button>
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="rounded-xl border border-red-200 bg-red-50 p-4">
-                <p className="text-sm font-medium text-red-800">{error}</p>
+        {/* Main Content */}
+        <div className="mx-auto max-w-6xl px-4 py-6 lg:py-8">
+          <form
+            onSubmit={handleSubmit}
+            className="grid gap-6 lg:grid-cols-[1fr_400px]"
+          >
+            {/* Left Column - Form */}
+            <div className="space-y-6">
+              {/* Desktop Back Button */}
+              <div className="hidden lg:block">
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
+                >
+                  <FaArrowLeft className="text-xs" />
+                  Back to cart
+                </button>
               </div>
-            )}
 
-            {/* Contact Details */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6">
+              {/* Error Message */}
+              {error && (
+                <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+                  <p className="text-sm font-medium text-red-800">{error}</p>
+                </div>
+              )}
+
+              {/* Contact Details */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-6">
                 <h2 className="mb-4 text-lg font-bold text-slate-900">
                   Contact details
                 </h2>
@@ -348,6 +432,70 @@ function CheckoutPageContent() {
                 </div>
               </div>
 
+              {/* Payment Method */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-6">
+                <h2 className="mb-4 text-lg font-bold text-slate-900">
+                  Payment method
+                </h2>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('cash')}
+                    className={`flex items-center gap-3 rounded-xl border-2 p-4 transition-all ${
+                      paymentMethod === 'cash'
+                        ? 'border-emerald-600 bg-emerald-50 ring-2 ring-emerald-600/20'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div
+                      className={`flex h-12 w-12 items-center justify-center rounded-lg ${
+                        paymentMethod === 'cash'
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      <FaMoneyBill className="text-xl" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-semibold text-slate-900">
+                        Cash on Service
+                      </p>
+                      <p className="text-xs text-slate-600">
+                        Pay after completion
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('online')}
+                    className={`flex items-center gap-3 rounded-xl border-2 p-4 transition-all ${
+                      paymentMethod === 'online'
+                        ? 'border-emerald-600 bg-emerald-50 ring-2 ring-emerald-600/20'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div
+                      className={`flex h-12 w-12 items-center justify-center rounded-lg ${
+                        paymentMethod === 'online'
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      <FaCreditCard className="text-xl" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-semibold text-slate-900">
+                        Pay Online
+                      </p>
+                      <p className="text-xs text-slate-600">
+                        UPI, Cards, Wallets
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
               {/* Additional Notes */}
               <div className="rounded-2xl border border-slate-200 bg-white p-6">
                 <h2 className="mb-4 text-lg font-bold text-slate-900">
@@ -369,7 +517,7 @@ function CheckoutPageContent() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-4 text-sm font-bold text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-4 text-sm font-bold text-white shadow-lg transition-all hover:bg-emerald-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading ? (
                     <>
@@ -379,97 +527,106 @@ function CheckoutPageContent() {
                   ) : (
                     <>
                       <FaCircleCheck className="text-xs" />
-                      Confirm booking (₹{total})
+                      {paymentMethod === 'cash'
+                        ? `Confirm booking (₹${total})`
+                        : `Pay now (₹${total})`}
                     </>
                   )}
                 </button>
               </div>
             </div>
 
-          {/* Right Column - Order Summary */}
-          <div className="lg:sticky lg:top-6 lg:h-fit">
-            <div className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6">
-              <h2 className="text-lg font-bold text-slate-900">
-                Order summary
-              </h2>
+            {/* Right Column - Order Summary */}
+            <div className="lg:sticky lg:top-6 lg:h-fit">
+              <div className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="text-lg font-bold text-slate-900">
+                  Order summary
+                </h2>
 
-              {/* Cart Items */}
-              <div className="space-y-4">
-                {cart.map((item) => (
-                  <div key={item._id} className="flex gap-3">
-                    <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                      <Image
-                        src={item.image || '/placeholder.png'}
-                        alt={item.serviceName || item.name}
-                        fill
-                        className="object-cover"
-                      />
+                {/* Cart Items */}
+                <div className="space-y-4">
+                  {cart.map((item) => (
+                    <div key={item._id} className="flex gap-3">
+                      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                        <Image
+                          src={item.image || '/placeholder.png'}
+                          alt={item.serviceName || item.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="truncate text-sm font-semibold text-slate-900">
+                          {item.serviceName || item.name}
+                        </h3>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Qty: {item.quantity || 1}
+                        </p>
+                        <p className="mt-1 text-sm font-bold text-slate-900">
+                          ₹{item.price * (item.quantity || 1)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-sm font-semibold text-slate-900">
-                        {item.serviceName || item.name}
-                      </h3>
-                      <p className="mt-1 text-xs text-slate-500">
-                        Qty: {item.quantity || 1}
-                      </p>
-                      <p className="mt-1 text-sm font-bold text-slate-900">
-                        ₹{item.price * (item.quantity || 1)}
-                      </p>
-                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-3 border-t border-slate-200 pt-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">Subtotal</span>
+                    <span className="font-semibold text-slate-900">
+                      ₹{subtotal}
+                    </span>
                   </div>
-                ))}
+                  {bookingFee > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">Booking fee</span>
+                      <span className="font-semibold text-slate-900">
+                        ₹{bookingFee}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between border-t border-slate-200 pt-3">
+                    <span className="text-base font-bold text-slate-900">
+                      Total
+                    </span>
+                    <span className="text-lg font-bold text-slate-900">
+                      ₹{total}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Desktop Submit Button */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="hidden w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-4 text-sm font-bold text-white shadow-lg transition-all hover:bg-emerald-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 lg:flex"
+                >
+                  {loading ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <FaCircleCheck className="text-xs" />
+                      {paymentMethod === 'cash'
+                        ? 'Confirm booking'
+                        : `Pay now (₹${total})`}
+                    </>
+                  )}
+                </button>
+
+                <p className="text-center text-xs text-slate-500">
+                  {paymentMethod === 'cash'
+                    ? 'Pay cash after service completion'
+                    : 'Secure payment powered by Cashfree'}
+                </p>
               </div>
-
-              <div className="space-y-3 border-t border-slate-200 pt-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-600">Subtotal</span>
-                  <span className="font-semibold text-slate-900">
-                    ₹{subtotal}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-600">Booking fee</span>
-                  <span className="font-semibold text-slate-900">
-                    ₹{bookingFee}
-                  </span>
-                </div>
-                <div className="flex justify-between border-t border-slate-200 pt-3">
-                  <span className="text-base font-bold text-slate-900">
-                    Total
-                  </span>
-                  <span className="text-lg font-bold text-slate-900">
-                    ₹{total}
-                  </span>
-                </div>
-              </div>
-
-              {/* Desktop Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="hidden w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-4 text-sm font-bold text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 lg:flex"
-              >
-                {loading ? (
-                  <>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <FaCircleCheck className="text-xs" />
-                    Confirm booking
-                  </>
-                )}
-              </button>
-
-              <p className="text-center text-xs text-slate-500">
-                By confirming, you agree to our terms and conditions
-              </p>
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

@@ -2,18 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Script from 'next/script';
 import { fetchServices, createBooking } from '@/lib/bookingService';
 import Image from 'next/image';
+import api from '@/lib/axios';
 import {
-  FaCalendarAlt,
+  FaCalendar,
   FaClock,
-  FaCheckCircle,
-  FaMapMarkerAlt,
+  FaCircleCheck,
+  FaLocationDot,
   FaMoneyBillWave,
-  FaStickyNote,
-  FaSearch,
+  FaNoteSticky,
+  FaMagnifyingGlass,
   FaChevronRight,
-} from 'react-icons/fa';
+  FaCreditCard,
+  FaMoneyBill,
+} from 'react-icons/fa6';
 import ProtectedRoute from '@/app/_components/ProtectedRoute';
 import { useCart } from '@/lib/cartContext';
 
@@ -275,6 +279,8 @@ function BookPage() {
         manual: manualLocation || undefined,
       };
 
+      let bookingIds = [];
+
       if (isCartCheckout) {
         const bookingRequests = cart.map((item) =>
           createBooking({
@@ -291,12 +297,16 @@ function BookPage() {
           })
         );
 
-        await Promise.all(bookingRequests);
-        clearCart();
+        const results = await Promise.all(bookingRequests);
+        bookingIds = results.map(r => r._id);
+        
+        if (paymentMethod === 'cash') {
+          clearCart();
+        }
       } else {
         const payload = {
           serviceId,
-          vendorId: vendorId || undefined, // Optional - will be assigned by admin
+          vendorId: vendorId || undefined,
           serviceDate: date,
           serviceTime: time,
           address,
@@ -307,15 +317,83 @@ function BookPage() {
           paymentMethod,
         };
 
-        // Log the payload for debugging
-        console.log('Booking payload:', payload);
-
-        await createBooking(payload);
+        const result = await createBooking(payload);
+        bookingIds = [result._id];
       }
-      setShowConfirmation(true);
-      setTimeout(() => {
-        window.location.href = '/bookings';
-      }, 2000);
+
+      // If online payment, initiate Cashfree checkout
+      if (paymentMethod === 'online') {
+        console.log('Initiating online payment for bookings:', bookingIds);
+        
+        try {
+          console.log('Calling payment API...');
+          
+          // Don't pass returnUrl - backend will set it with order_id
+          const paymentResponse = await api.post('/payments/create-order', {
+            bookingIds: bookingIds,
+          });
+
+          console.log('Payment order created:', paymentResponse.data);
+          const { orderId, paymentSessionId } = paymentResponse.data.data;
+
+          if (!paymentSessionId) {
+            throw new Error('Failed to create payment session');
+          }
+
+          if (typeof window.Cashfree === 'undefined') {
+            console.error('Cashfree SDK not loaded on window object');
+            throw new Error('Cashfree SDK not loaded. Please refresh and try again.');
+          }
+
+          console.log('Initializing Cashfree SDK...');
+          const cashfree = window.Cashfree({
+            mode: process.env.NEXT_PUBLIC_CASHFREE_ENV || 'production',
+          });
+
+          // Note: Don't pass returnUrl here - Cashfree will use the one from order_meta
+          const checkoutOptions = {
+            paymentSessionId: paymentSessionId,
+            redirectTarget: '_self',
+          };
+
+          console.log('Opening Cashfree checkout with options:', checkoutOptions);
+          
+          // Cashfree will redirect, so we keep loading state
+          cashfree.checkout(checkoutOptions).then((result) => {
+            console.log('Cashfree checkout result:', result);
+            if (result.error) {
+              console.error('Cashfree checkout error:', result.error);
+              alert(`Payment initialization failed: ${result.error.message}`);
+              setLoading(false);
+            }
+            // If successful, Cashfree redirects to payment page
+          }).catch((error) => {
+            console.error('Cashfree checkout exception:', error);
+            alert(`Payment failed: ${error.message}`);
+            setLoading(false);
+          });
+        } catch (paymentError) {
+          console.error('Payment order creation error:', paymentError);
+          console.error('Error details:', {
+            message: paymentError.message,
+            response: paymentError.response?.data,
+            status: paymentError.response?.status,
+            stack: paymentError.stack
+          });
+          const errorMsg = paymentError.response?.data?.message || paymentError.message || 'Failed to create payment order';
+          alert(`Failed to create payment order: ${errorMsg}`);
+          setLoading(false);
+        }
+      } else {
+        // Cash payment - show success and redirect
+        if (isCartCheckout) {
+          clearCart();
+        }
+        setShowConfirmation(true);
+        setTimeout(() => {
+          window.location.href = '/bookings';
+        }, 2000);
+      }
     } catch (err) {
       console.error('Booking submission error:', err);
       const errorMessage =
@@ -324,7 +402,6 @@ function BookPage() {
         err?.message ||
         'Failed to create booking';
       alert(`Booking failed: ${errorMessage}`);
-    } finally {
       setLoading(false);
     }
   };
@@ -340,72 +417,80 @@ function BookPage() {
   const canProceedToStep3 = () => canProceedToStep2() && date && time;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-24">
-      {/* Header */}
-      <div className="bg-white shadow-sm">
-        <div className="mx-auto max-w-6xl px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Book Your Service
-          </h1>
-          <p className="mt-2 text-gray-600">
-            Professional services at your doorstep
-          </p>
+    <>
+      {/* Load Cashfree SDK */}
+      <Script
+        src="https://sdk.cashfree.com/js/v3/cashfree.js"
+        strategy="lazyOnload"
+        onError={() => console.error('Failed to load Cashfree SDK')}
+      />
 
-          {/* Progress Steps */}
-          <div className="mt-6 flex items-center justify-center gap-2">
-            <div className="flex items-center gap-2">
-              <div
-                className={`flex h-10 w-10 items-center justify-center rounded-full font-bold transition ${
-                  step >= 1
-                    ? 'bg-black text-white'
-                    : 'bg-gray-200 text-gray-500'
-                }`}
-              >
-                1
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-24">
+        {/* Header */}
+        <div className="bg-white shadow-sm">
+          <div className="mx-auto max-w-6xl px-4 py-6">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Book Your Service
+            </h1>
+            <p className="mt-2 text-gray-600">
+              Professional services at your doorstep
+            </p>
+
+            {/* Progress Steps */}
+            <div className="mt-6 flex items-center justify-center gap-2">
+              <div className="flex items-center gap-2">
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-full font-bold transition ${
+                    step >= 1
+                      ? 'bg-black text-white'
+                      : 'bg-gray-200 text-gray-500'
+                  }`}
+                >
+                  1
+                </div>
+                <span
+                  className={`hidden font-medium sm:inline ${step >= 1 ? 'text-black' : 'text-gray-500'}`}
+                >
+                  Select Service
+                </span>
               </div>
-              <span
-                className={`hidden font-medium sm:inline ${step >= 1 ? 'text-black' : 'text-gray-500'}`}
-              >
-                Select Service
-              </span>
-            </div>
-            <div className="h-0.5 w-12 bg-gray-300" />
-            <div className="flex items-center gap-2">
-              <div
-                className={`flex h-10 w-10 items-center justify-center rounded-full font-bold transition ${
-                  step >= 2
-                    ? 'bg-black text-white'
-                    : 'bg-gray-200 text-gray-500'
-                }`}
-              >
-                2
+              <div className="h-0.5 w-12 bg-gray-300" />
+              <div className="flex items-center gap-2">
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-full font-bold transition ${
+                    step >= 2
+                      ? 'bg-black text-white'
+                      : 'bg-gray-200 text-gray-500'
+                  }`}
+                >
+                  2
+                </div>
+                <span
+                  className={`hidden font-medium sm:inline ${step >= 2 ? 'text-black' : 'text-gray-500'}`}
+                >
+                  Date & Time
+                </span>
               </div>
-              <span
-                className={`hidden font-medium sm:inline ${step >= 2 ? 'text-black' : 'text-gray-500'}`}
-              >
-                Date & Time
-              </span>
-            </div>
-            <div className="h-0.5 w-12 bg-gray-300" />
-            <div className="flex items-center gap-2">
-              <div
-                className={`flex h-10 w-10 items-center justify-center rounded-full font-bold transition ${
-                  step >= 3
-                    ? 'bg-black text-white'
-                    : 'bg-gray-200 text-gray-500'
-                }`}
-              >
-                3
+              <div className="h-0.5 w-12 bg-gray-300" />
+              <div className="flex items-center gap-2">
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-full font-bold transition ${
+                    step >= 3
+                      ? 'bg-black text-white'
+                      : 'bg-gray-200 text-gray-500'
+                  }`}
+                >
+                  3
+                </div>
+                <span
+                  className={`hidden font-medium sm:inline ${step >= 3 ? 'text-black' : 'text-gray-500'}`}
+                >
+                  Details & Confirm
+                </span>
               </div>
-              <span
-                className={`hidden font-medium sm:inline ${step >= 3 ? 'text-black' : 'text-gray-500'}`}
-              >
-                Details & Confirm
-              </span>
             </div>
           </div>
         </div>
-      </div>
 
       <div className="mx-auto max-w-6xl px-4 py-8">
         {/* Step 1: Service Selection */}
@@ -413,7 +498,7 @@ function BookPage() {
           <div className="space-y-6">
             {/* Search Bar */}
             <div className="relative">
-              <FaSearch className="absolute top-1/2 left-4 -translate-y-1/2 text-gray-400" />
+              <FaMagnifyingGlass className="absolute top-1/2 left-4 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 value={serviceSearch}
@@ -571,7 +656,7 @@ function BookPage() {
             {/* Date Selection */}
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <label className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
-                <FaCalendarAlt className="text-black" />
+                <FaCalendar className="text-black" />
                 Select Date *
               </label>
               <input
@@ -648,7 +733,7 @@ function BookPage() {
               {/* Address */}
               <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                 <label className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
-                  <FaMapMarkerAlt className="text-black" />
+                  <FaLocationDot className="text-black" />
                   Service Address *
                 </label>
                 <div className="relative">
@@ -737,7 +822,7 @@ function BookPage() {
               {/* Special Instructions */}
               <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                 <label className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
-                  <FaStickyNote className="text-black" />
+                  <FaNoteSticky className="text-black" />
                   Special Instructions (Optional)
                 </label>
                 <textarea
@@ -759,26 +844,33 @@ function BookPage() {
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('cash')}
-                    className={`rounded-lg border-2 px-6 py-4 text-center font-semibold transition ${
+                    className={`flex items-center justify-center gap-2 rounded-lg border-2 px-6 py-4 font-semibold transition ${
                       paymentMethod === 'cash'
                         ? 'border-black bg-black text-white'
                         : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
                     }`}
                   >
-                    💵 Cash
+                    <FaMoneyBill className="text-xl" />
+                    Cash
                   </button>
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('online')}
-                    className={`rounded-lg border-2 px-6 py-4 text-center font-semibold transition ${
+                    className={`flex items-center justify-center gap-2 rounded-lg border-2 px-6 py-4 font-semibold transition ${
                       paymentMethod === 'online'
                         ? 'border-black bg-black text-white'
                         : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
                     }`}
                   >
-                    💳 Online
+                    <FaCreditCard className="text-xl" />
+                    Online
                   </button>
                 </div>
+                {paymentMethod === 'online' && (
+                  <p className="mt-3 text-center text-xs text-gray-500">
+                    Powered by Cashfree • UPI, Cards, Wallets accepted
+                  </p>
+                )}
               </div>
 
               {/* Navigation */}
@@ -800,7 +892,7 @@ function BookPage() {
                     '⏳ Processing...'
                   ) : (
                     <>
-                      <FaCheckCircle />
+                      <FaCircleCheck />
                       Confirm Booking (₹{Number(price || 0).toFixed(2)})
                     </>
                   )}
@@ -895,7 +987,7 @@ function BookPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="animate-fade-in w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl">
               <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-                <FaCheckCircle className="text-5xl text-green-600" />
+                <FaCircleCheck className="text-5xl text-green-600" />
               </div>
               <h2 className="mb-2 text-2xl font-bold text-gray-900">
                 Booking Confirmed!
@@ -910,7 +1002,8 @@ function BookPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
